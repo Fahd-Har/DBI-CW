@@ -17,11 +17,10 @@
   </div>
   <div class="sidebar-sub">Internship Result Management System</div>
   <ul class="sidebar-nav">
-    <li><a href="Admin_page.html" class="active">
-        <img src="home.png" alt="Home Icon" class="icon"/> Dashboard</a></li>
-    <li><a href="User_Management.html"><img src="users.png" alt="Users Icon" class="icon"/> User Management</a></li>
+    <li><a href="Admin_page.html"><img src="home.png" alt="Home Icon" class="icon"/> Dashboard</a></li>
+    <li><a href="User_Management.html" class="active"><img src="users.png" alt="Users Icon" class="icon"/> User Management</a></li>
     <li><a href="Internship_management.html"><img src="internship.png" alt="Internships Icon" class="icon"/> Internship Management</a></li>
-    <li><a href="#"><img src="results.png" alt="Results Icon" class="icon"/> Result Viewing</a></li>
+    <li><a href="Result_Viewing.html"><img src="results.png" alt="Results Icon" class="icon"/> Result Viewing</a></li>
   </ul>
   <div class="sidebar-footer">
     Logged in as<br><span>Admin</span>
@@ -35,16 +34,23 @@
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-title">
-      <div class="breadcrumb"><a href="Admin_page.html">Dashboard</a> / Internship Management</div>
+      <div class="breadcrumb"><a href="Admin_page.html">Dashboard</a> / User Management</div>
       <h1>Student Profiles</h1>
       <p>Add new or edit existing student profiles.</p>
     </div>
-    <button class="btn-primary" onclick="openModal()">＋ Add Internship</button>
+    <button class="btn-primary" onclick="openModal()">＋ Add Student Profile</button>
   </div>
 
   <!-- SEARCH BAR -->
   <div class="filter-bar">
     <input type="text" id="searchInput" placeholder="🔍  Search by student ID or name…" oninput="filterTable()"/>
+    <select id="programmeFilter" onchange="filterTable()">
+      <option value="">All Programmes</option>
+      <option value="CS">Computer Science</option>
+      <option value="Maths">Mathematics</option>
+      <option value="Engineering">Engineering</option>
+      <option value="Finance">Finance</option>
+    </select>
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
 
@@ -61,6 +67,7 @@
           <th>Student ID</th>
           <th>Full Name</th>
           <th>Programme</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody id="tableBody">
@@ -84,65 +91,26 @@
       <span class="badge-teal" id="modalBadge">New</span>
     </div>
 
-    <div class="form-row">
-      <div class="form-group">
-        <label>Student ID *</label>
-        <input type="text" id="fStudentId" placeholder="e.g. 20001"/>
-        <div class="error-msg" id="errStudentId">Student ID is required.</div>
-      </div>
-      <div class="form-group">
-        <label>Student Name *</label>
-        <input type="text" id="fStudentName" placeholder="Full name"/>
-        <div class="error-msg" id="errStudentName">Student name is required.</div>
-      </div>
+    <div class="form-group">
+      <label>Student ID *</label>
+      <input type="text" id="fStudentId" placeholder="e.g. 20001"/>
+      <div class="error-msg" id="errStudentId">Student ID is required.</div>
     </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Programme *</label>
-        <select id="fProgramme">
-          <option value="">Select programme</option>
-          <option>CS</option><option>Maths</option>
-          <option>Engineering</option><option>Finance</option>
-        </select>
-        <div class="error-msg" id="errProgramme">Programme is required.</div>
-      </div>
-      <div class="form-group">
-        <label>Assessor *</label>
-        <select id="fAssessor">
-          <option value="">Select assessor</option>
-          <option>Dr. Tan</option><option>Dr. Yap</option>
-          <option>Dr. Chew</option><option>Mr. Chew</option>
-        </select>
-        <div class="error-msg" id="errAssessor">Assessor is required.</div>
-      </div>
+      
+    <div class="form-group">
+      <label>Student Name *</label>
+      <input type="text" id="fStudentName" placeholder="Full name"/>
+      <div class="error-msg" id="errStudentName">Student name is required.</div>
     </div>
 
     <div class="form-group">
-      <label>Company Name *</label>
-      <input type="text" id="fCompany" placeholder="e.g. JP Morgan"/>
-      <div class="error-msg" id="errCompany">Company name is required.</div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Start Date *</label>
-        <input type="date" id="fStartDate"/>
-        <div class="error-msg" id="errStartDate">Start date is required.</div>
-      </div>
-      <div class="form-group">
-        <label>Status</label>
-        <select id="fStatus">
-          <option value="Pending">Pending</option>
-          <option value="Active">Active</option>
-          <option value="Completed">Completed</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="form-group">
-      <label>Remarks</label>
-      <textarea id="fRemarks" placeholder="Optional notes…"></textarea>
+      <label>Programme *</label>
+      <select id="fProgramme">
+        <option value="">Select programme</option>
+        <option>CS</option><option>Maths</option>
+        <option>Engineering</option><option>Finance</option>
+      </select>
+      <div class="error-msg" id="errProgramme">Programme is required.</div>
     </div>
 
     <div class="modal-footer">
@@ -160,10 +128,8 @@
     editingRow = null;
     document.getElementById('modalHeading').textContent = 'Add Internship';
     document.getElementById('modalBadge').textContent   = 'New';
-    ['fStudentId','fStudentName','fCompany','fRemarks'].forEach(id => document.getElementById(id).value = '');
-    ['fProgramme','fAssessor'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('fStatus').value = 'Pending';
-    document.getElementById('fStartDate').value = '';
+    ['fStudentId','fStudentName'].forEach(id => document.getElementById(id).value = '');
+    ['fProgramme'].forEach(id => document.getElementById(id).value = '');
     clearErrors();
     document.getElementById('modalOverlay').classList.add('open');
   }
@@ -171,14 +137,11 @@
   function editRow(btn) {
     editingRow = btn.closest('tr');
     const cells = editingRow.querySelectorAll('td');
-    document.getElementById('modalHeading').textContent = 'Edit Internship';
+    document.getElementById('modalHeading').textContent = 'Edit Student';
     document.getElementById('modalBadge').textContent   = 'Editing';
-    document.getElementById('fStudentId').value   = editingRow.dataset.id;
-    document.getElementById('fStudentName').value = editingRow.dataset.name;
-    document.getElementById('fProgramme').value   = cells[1].textContent.trim();
-    document.getElementById('fCompany').value     = cells[2].textContent.trim();
-    document.getElementById('fAssessor').value    = cells[3].textContent.trim();
-    document.getElementById('fStatus').value      = editingRow.dataset.status;
+    document.getElementById('fStudentId').value = cells[0].textContent;
+    document.getElementById('fStudentName').value = cells[1].textContent;
+    document.getElementById('fProgramme').value = cells[2].textContent;
     clearErrors();
     document.getElementById('modalOverlay').classList.add('open');
   }
@@ -201,9 +164,6 @@
     check('fStudentId',   'errStudentId');
     check('fStudentName', 'errStudentName');
     check('fProgramme',   'errProgramme');
-    check('fAssessor',    'errAssessor');
-    check('fCompany',     'errCompany');
-    check('fStartDate',   'errStartDate');
     return ok;
   }
 
@@ -213,30 +173,25 @@
     const id      = document.getElementById('fStudentId').value.trim();
     const name    = document.getElementById('fStudentName').value.trim();
     const prog    = document.getElementById('fProgramme').value;
-    const company = document.getElementById('fCompany').value.trim();
-    const assessor= document.getElementById('fAssessor').value;
-    const start   = document.getElementById('fStartDate').value;
-    const status  = document.getElementById('fStatus').value;
-    const initials= name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-    const statusClass = status==='Active'?'badge-active':status==='Completed'?'badge-done':'badge-pending';
-    const dateStr = start ? new Date(start).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '-';
 
     const rowHTML = `
-      <td><div class="student-cell"><div class="stu-avatar">${initials}</div><div><div class="stu-name">${name}</div><div class="stu-id">${id}</div></div></div></td>
-      <td>${prog}</td><td>${company}</td><td>${assessor}</td><td>${dateStr}</td>
-      <td><span class="badge ${statusClass}">${status}</span></td>
-      <td><div class="action-btns"><button class="btn-edit" onclick="editRow(this)">Edit</button><button class="btn-del" onclick="deleteRow(this)">Delete</button></div></td>`;
-
+      <td>${id}</td>
+      <td>${name}</td>
+      <td>${prog}</td>
+      <td>
+        <button onclick="editRow(this)">Edit</button>
+        <button onclick="deleteRow(this)">Delete</button>
+      </td>
+  `;
     if (editingRow) {
       editingRow.innerHTML = rowHTML;
       editingRow.dataset.name = name;
       editingRow.dataset.id   = id;
-      editingRow.dataset.status = status;
-      editingRow.dataset.assessor = assessor;
+      editingRow.dataset.programme = prog;
     } else {
       const tr = document.createElement('tr');
       tr.dataset.name = name; tr.dataset.id = id;
-      tr.dataset.status = status; tr.dataset.assessor = assessor;
+      tr.dataset.programme = prog;
       tr.innerHTML = rowHTML;
       document.getElementById('tableBody').appendChild(tr);
     }
@@ -245,7 +200,7 @@
 
   /* ── DELETE ── */
   function deleteRow(btn) {
-    if (confirm('Delete this internship record?')) {
+    if (confirm('Delete this student record?')) {
       btn.closest('tr').remove();
       updateCount();
     }
@@ -253,20 +208,22 @@
 
   /* ── FILTER ── */
   function filterTable() {
-    const q   = document.getElementById('searchInput').value.toLowerCase();
-    const st  = document.getElementById('statusFilter').value;
-    const as  = document.getElementById('assessorFilter').value;
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const prog = document.getElementById('programmeFilter').value;
+
     let vis = 0;
+
     document.querySelectorAll('#tableBody tr').forEach(row => {
-      const matchQ  = !q  || row.dataset.name.toLowerCase().includes(q) || row.dataset.id.includes(q);
-      const matchSt = !st || row.dataset.status === st;
-      const matchAs = !as || row.dataset.assessor === as;
-      const show = matchQ && matchSt && matchAs;
+      const match = !q || row.dataset.name.toLowerCase().includes(q) || row.dataset.id.includes(q);
+      const progMatch = !prog || row.dataset.programme === prog;
+      const show = match && progMatch;
       row.style.display = show ? '' : 'none';
       if (show) vis++;
     });
-    document.getElementById('recordCount').textContent = vis + ' Record' + (vis!==1?'s':'');
-  }
+
+    document.getElementById('recordCount').textContent =
+      vis + ' Record' + (vis !== 1 ? 's' : '');
+    }
 
   function updateCount() {
     const total = document.querySelectorAll('#tableBody tr').length;
