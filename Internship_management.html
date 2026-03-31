@@ -109,23 +109,7 @@
         <input type="text" id="fStudentId" placeholder="e.g. 20001"/>
         <div class="error-msg" id="errStudentId">Student ID is required.</div>
       </div>
-      <div class="form-group">
-        <label>Student Name *</label>
-        <input type="text" id="fStudentName" placeholder="Full name"/>
-        <div class="error-msg" id="errStudentName">Student name is required.</div>
-      </div>
-    </div>
-
-    <div class="form-row">
-      <div class="form-group">
-        <label>Programme *</label>
-        <select id="fProgramme">
-          <option value="">Select programme</option>
-          <option>CS</option><option>Maths</option>
-          <option>Engineering</option><option>Finance</option>
-        </select>
-        <div class="error-msg" id="errProgramme">Programme is required.</div>
-      </div>
+    
       <div class="form-group">
         <label>Assessor *</label>
         <select id="fAssessor">
@@ -218,8 +202,6 @@
       }
     };
     check('fStudentId',   'errStudentId');
-    check('fStudentName', 'errStudentName');
-    check('fProgramme',   'errProgramme');
     check('fAssessor',    'errAssessor');
     check('fCompany',     'errCompany');
     check('fStartDate',   'errStartDate');
