@@ -102,9 +102,11 @@
 
     <div class="form-row">
       <div class="form-group">
-        <label>Student ID *</label>
-        <input type="text" id="fStudentId" placeholder="e.g. 20001"/>
-        <div class="error-msg" id="errStudentId">Student ID is required.</div>
+        <label>Student *</label>
+        <select id="fStudentId">
+          <option value="">Select student</option>
+        </select>
+        <div class="error-msg" id="errStudentId">Student is required.</div>
       </div>
     
       <div class="form-group">
@@ -153,6 +155,26 @@
 </div>
 
 <script>
+    /* ── STUDENT DATA (shared with Student Management) ── */
+  const students = [
+    { id:'20001', name:'Lim Wei Xian',  prog:'CS' },
+    { id:'20002', name:'Nurul Aisyah',  prog:'Finance' },
+    { id:'20003', name:'Raj Kumar',     prog:'Engineering' },
+    { id:'20004', name:'Tan Mei Ling',  prog:'CS' },
+    { id:'20005', name:'Ahmad Farid',   prog:'Maths' },
+  ];
+ 
+  function getStudent(id) {
+    return students.find(s => s.id === id);
+  }
+ 
+  function populateStudentDropdown() {
+    const sel = document.getElementById('fStudentId');
+    sel.innerHTML = '<option value="">Select student</option>';
+    students.forEach(s => {
+      sel.innerHTML += `<option value="${s.id}">${s.id} – ${s.name}</option>`;
+    });
+  }
   /* ── MODAL ── */
   let editingRow = null;
 
@@ -160,9 +182,12 @@
     editingRow = null;
     document.getElementById('modalHeading').textContent = 'Add Internship';
     document.getElementById('modalBadge').textContent   = 'New';
-    ['fStudentId','fStudentName','fCompany','fRemarks'].forEach(id => document.getElementById(id).value = '');
-    ['fProgramme','fAssessor'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('fStatus').value = 'Pending';
+    document.getElementById('fStudentId').value = '';
+    document.getElementById('fStudentId').disabled = false;
+    document.getElementById('fAssessor').value  = '';
+    document.getElementById('fCompany').value   = '';
+    document.getElementById('fRemarks').value   = '';
+    document.getElementById('fStatus').value    = 'Pending';
     document.getElementById('fStartDate').value = '';
     clearErrors();
     document.getElementById('modalOverlay').classList.add('open');
@@ -174,10 +199,10 @@
     document.getElementById('modalHeading').textContent = 'Edit Internship';
     document.getElementById('modalBadge').textContent   = 'Editing';
     document.getElementById('fStudentId').value   = editingRow.dataset.id;
-    document.getElementById('fStudentName').value = editingRow.dataset.name;
-    document.getElementById('fProgramme').value   = cells[1].textContent.trim();
+    document.getElementById('fStudentId').disabled = true;
     document.getElementById('fCompany').value     = cells[2].textContent.trim();
     document.getElementById('fAssessor').value    = cells[3].textContent.trim();
+    document.getElementById('fStartDate').value   = editingRow.dataset.start || '';
     document.getElementById('fStatus').value      = editingRow.dataset.status;
     clearErrors();
     document.getElementById('modalOverlay').classList.add('open');
@@ -190,7 +215,7 @@
   function clearErrors() {
     document.querySelectorAll('.error-msg').forEach(el => el.classList.remove('show'));
   }
-
+ 
   function validate() {
     clearErrors(); let ok = true;
     const check = (id, errId) => {
@@ -204,43 +229,46 @@
     check('fStartDate',   'errStartDate');
     return ok;
   }
-
+ 
   /* ── SAVE ── */
   function saveForm() {
     if (!validate()) return;
-    const id      = document.getElementById('fStudentId').value.trim();
-    const name    = document.getElementById('fStudentName').value.trim();
-    const prog    = document.getElementById('fProgramme').value;
-    const company = document.getElementById('fCompany').value.trim();
-    const assessor= document.getElementById('fAssessor').value;
-    const start   = document.getElementById('fStartDate').value;
-    const status  = document.getElementById('fStatus').value;
-    const initials= name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    const id       = document.getElementById('fStudentId').value.trim();
+    const student  = getStudent(id);
+    const name     = student ? student.name : id;
+    const prog     = student ? student.prog : '–';
+    const company  = document.getElementById('fCompany').value.trim();
+    const assessor = document.getElementById('fAssessor').value;
+    const start    = document.getElementById('fStartDate').value;
+    const status   = document.getElementById('fStatus').value;
+    const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
     const statusClass = status==='Active'?'badge-active':status==='Completed'?'badge-done':'badge-pending';
-    const dateStr = start ? new Date(start).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '-';
-
+    const dateStr  = start ? new Date(start).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '-';
+ 
     const rowHTML = `
       <td><div class="student-cell"><div class="stu-avatar">${initials}</div><div><div class="stu-name">${name}</div><div class="stu-id">${id}</div></div></div></td>
       <td>${prog}</td><td>${company}</td><td>${assessor}</td><td>${dateStr}</td>
       <td><span class="badge ${statusClass}">${status}</span></td>
       <td><div class="action-btns"><button class="btn-edit" onclick="editRow(this)">Edit</button><button class="btn-del" onclick="deleteRow(this)">Delete</button></div></td>`;
-
+ 
     if (editingRow) {
       editingRow.innerHTML = rowHTML;
       editingRow.dataset.name = name;
       editingRow.dataset.id   = id;
       editingRow.dataset.status = status;
       editingRow.dataset.assessor = assessor;
+      editingRow.dataset.start = start;
     } else {
       const tr = document.createElement('tr');
       tr.dataset.name = name; tr.dataset.id = id;
       tr.dataset.status = status; tr.dataset.assessor = assessor;
+      tr.dataset.start = start;
       tr.innerHTML = rowHTML;
       document.getElementById('tableBody').appendChild(tr);
     }
     updateCount(); closeModal();
   }
-
+ 
   /* ── DELETE ── */
   function deleteRow(btn) {
     if (confirm('Delete this internship record?')) {
@@ -248,7 +276,7 @@
       updateCount();
     }
   }
-
+ 
   /* ── FILTER ── */
   function filterTable() {
     const q   = document.getElementById('searchInput').value.toLowerCase();
@@ -265,11 +293,14 @@
     });
     document.getElementById('recordCount').textContent = vis + ' Record' + (vis!==1?'s':'');
   }
-
+ 
   function updateCount() {
     const total = document.querySelectorAll('#tableBody tr').length;
     document.getElementById('recordCount').textContent = total + ' Record' + (total!==1?'s':'');
   }
+ 
+  /* ── INIT ── */
+  populateStudentDropdown();
 </script>
 </body>
 </html>
