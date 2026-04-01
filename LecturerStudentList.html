@@ -32,7 +32,7 @@
       <h1>Student List</h1>
       <p>View your assigned students and their internship marks.</p>
     </div>
-    <button class="btn-primary" onclick="openModal()">＋ Key In Results</button>
+    <button class="btn-primary" onclick="openModal()">Manage Results</button>
   </div>
 
   <!-- FILTER BAR -->
@@ -91,7 +91,7 @@
     
     <div class="form-group">
       <label>Student ID:</label>
-      <select id="studentIdInput"></select>
+      <select id="studentIdInput" onchange="onStudentChange()"></select>
     </div>
 
     <div class="form-row">
@@ -175,6 +175,8 @@ function populateDropdown() {
 /* ── MODAL ── */
 function openModal() {
   document.getElementById("modalOverlay").style.display = "flex";
+  let firstId = document.getElementById("studentIdInput").value;
+  loadStudentData(firstId);
 }
 
 function closeModal() {
@@ -213,8 +215,32 @@ let students = rawData.map(s => ({
     time: null
   },
 
-  supervisorMark: null
+  supervisorMark: null,
+  remarks: ""
 }));
+
+function loadStudentData(id) {
+  let student = students.find(s => s.id === id);
+  if (!student) return;
+
+  let m = student.lecturerMarks;
+
+  document.getElementById("tasksMarkInput").value = m.task ?? "";
+  document.getElementById("healthSafetyMarkInput").value = m.safety ?? "";
+  document.getElementById("connectivityMarkInput").value = m.knowledge ?? "";
+  document.getElementById("presentationMarkInput").value = m.report ?? "";
+  document.getElementById("clarityMarkInput").value = m.language ?? "";
+  document.getElementById("lifelongLearningMarkInput").value = m.learning ?? "";
+  document.getElementById("projectManagementMarkInput").value = m.project ?? "";
+  document.getElementById("timeManagementMarkInput").value = m.time ?? "";
+
+  document.getElementById("fRemarks").value = student.remarks ?? "";
+}
+
+function onStudentChange() {
+  let id = document.getElementById("studentIdInput").value;
+  loadStudentData(id);
+}
 
 /* ── GET LECTURER MARK TOTAL ── */
 function getLecturerTotal(marks) {
@@ -247,6 +273,8 @@ function saveForm() {
     project: getValue("projectManagementMarkInput"),
     time: getValue("timeManagementMarkInput")
   };
+
+  student.remarks = document.getElementById("fRemarks").value;
 
   renderTable();
   closeModal();
