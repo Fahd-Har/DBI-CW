@@ -1,9 +1,9 @@
 <?php
 $host = '127.0.0.1';
-$port = 3307;
+$port = 3306;
 $db   = 'internship result management system';
 $user = 'root';
-$pass = '';
+$pass = 'root';
 
 $conn = new mysqli($host, $user, $pass, $db, $port);
 
