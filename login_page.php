@@ -1,3 +1,84 @@
+<?php
+// ── DATABASE CONNECTION ──
+if (session_status() === PHP_SESSION_NONE) session_start();
+
+// If already logged in, redirect
+if (isset($_SESSION['user_id'])) {
+    if ($_SESSION['role'] === 'admin') header("Location: Admin_page.php");
+    elseif ($_SESSION['role'] === 'lecturer') header("Location: LecturerStudentList.php");
+    else header("Location: SupervisorStudentList.php");
+    exit;
+}
+
+$error = '';
+
+// ── HANDLE LOGIN FORM SUBMISSION ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    require_once 'db_connect.php';
+
+    $username = trim($_POST['username'] ?? '');
+    $password = trim($_POST['password'] ?? '');
+    $role     = trim($_POST['role'] ?? '');
+
+    if (empty($username) || empty($password)) {
+        $error = 'Please fill in all fields';
+    } else {
+        $stmt = $conn->prepare("SELECT UserID, Username, Password, Role FROM users WHERE Username = ?");
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+
+            if ($user['Password'] === $password) {
+                $dbRole = strtolower($user['Role']);
+                $selectedRole = strtolower($role);
+                $isAssessor = ($dbRole === 'lecturer' || $dbRole === 'supervisor');
+
+                if (($selectedRole === 'admin' && $dbRole === 'admin') ||
+                    ($selectedRole === 'assessor' && $isAssessor)) {
+
+                    $_SESSION['user_id']  = $user['UserID'];
+                    $_SESSION['username'] = $user['Username'];
+                    $_SESSION['role']     = $user['Role'];
+
+                    if ($dbRole === 'lecturer') {
+                        $q = $conn->prepare("SELECT LecturerID, Name FROM lecturer WHERE UserID = ?");
+                        $q->bind_param("i", $user['UserID']);
+                        $q->execute();
+                        $r = $q->get_result()->fetch_assoc();
+                        $_SESSION['assessor_id']  = $r['LecturerID'];
+                        $_SESSION['assessor_name'] = $r['Name'];
+                        header("Location: LecturerStudentList.php");
+                        exit;
+
+                    } elseif ($dbRole === 'supervisor') {
+                        $q = $conn->prepare("SELECT SupervisorID, Name FROM supervisor WHERE UserID = ?");
+                        $q->bind_param("i", $user['UserID']);
+                        $q->execute();
+                        $r = $q->get_result()->fetch_assoc();
+                        $_SESSION['assessor_id']  = $r['SupervisorID'];
+                        $_SESSION['assessor_name'] = $r['Name'];
+                        header("Location: SupervisorStudentList.php");
+                        exit;
+
+                    } else {
+                        header("Location: Admin_page.php");
+                        exit;
+                    }
+                } else {
+                    $error = 'Invalid username, password, or role. Please try again.';
+                }
+            } else {
+                $error = 'Invalid username, password, or role. Please try again.';
+            }
+        } else {
+            $error = 'Invalid username, password, or role. Please try again.';
+        }
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,16 +87,12 @@
   <title>Login – UNM Internship Result Management</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    /* ── LOGIN PAGE OVERRIDES ── */
-    /* Full-page split layout – no sidebar on login */
     body {
       display: flex;
       min-height: 100vh;
       background: var(--light);
       overflow: hidden;
     }
-
-    /* ── LEFT PANEL ── */
     .login-left {
       width: 420px;
       flex-shrink: 0;
@@ -27,8 +104,6 @@
       position: relative;
       overflow: hidden;
     }
-
-    /* Decorative circles */
     .login-left::before,
     .login-left::after {
       content: '';
@@ -46,14 +121,12 @@
       background: var(--accent);
       bottom: -60px; right: -60px;
     }
-
     .left-logo {
       display: flex;
       align-items: center;
       gap: 14px;
       position: relative; z-index: 1;
     }
-    /* White pill keeps logo readable on the grey-blue sidebar colour */
     .logo-bg {
       background: var(--white);
       border-radius: 12px;
@@ -78,7 +151,6 @@
       text-transform: uppercase;
       letter-spacing: .08em;
     }
-
     .left-body {
       position: relative; z-index: 1;
       flex: 1;
@@ -87,7 +159,6 @@
       justify-content: center;
       gap: 20px;
     }
-
     .left-tagline {
       font-family: 'Sora', sans-serif;
       font-size: 1.85rem;
@@ -96,15 +167,12 @@
       line-height: 1.3;
     }
     .left-tagline span { color: var(--teal); }
-
     .left-desc {
       font-size: .88rem;
       color: rgba(255,255,255,.55);
       line-height: 1.65;
       max-width: 300px;
     }
-
-    /* Feature bullets */
     .left-features { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
     .feat-item {
       display: flex;
@@ -120,14 +188,11 @@
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-
     .left-footer {
       position: relative; z-index: 1;
       font-size: .74rem;
       color: rgba(255,255,255,.3);
     }
-
-    /* ── RIGHT PANEL ── */
     .login-right {
       flex: 1;
       display: flex;
@@ -136,7 +201,6 @@
       padding: 40px 24px;
       background: var(--light);
     }
-
     .login-card {
       background: var(--white);
       border-radius: 24px;
@@ -146,12 +210,10 @@
       box-shadow: var(--shadow-lg);
       animation: cardIn .4s ease both;
     }
-
     @keyframes cardIn {
       from { opacity: 0; transform: translateY(24px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
     .login-card-title {
       font-family: 'Sora', sans-serif;
       font-size: 1.5rem;
@@ -164,8 +226,6 @@
       color: var(--muted);
       margin-bottom: 32px;
     }
-
-    /* Role toggle */
     .role-toggle {
       display: flex;
       background: var(--light);
@@ -191,7 +251,6 @@
     .role-toggle input[type="radio"]:checked + label {
       color: var(--navy);
     }
-    /* sliding pill */
     .toggle-pill {
       position: absolute;
       top: 4px; left: 4px;
@@ -204,8 +263,6 @@
       pointer-events: none;
     }
     #roleAssessor:checked ~ .toggle-pill { transform: translateX(100%); }
-
-    /* Form */
     .lf-group { margin-bottom: 20px; }
     .lf-group label {
       display: block;
@@ -216,9 +273,7 @@
       letter-spacing: .05em;
       margin-bottom: 7px;
     }
-    .lf-input-wrap {
-      position: relative;
-    }
+    .lf-input-wrap { position: relative; }
     .lf-input-wrap .lf-icon {
       position: absolute;
       left: 14px; top: 50%;
@@ -243,9 +298,6 @@
       background: var(--white);
       box-shadow: 0 0 0 3px rgba(23,195,178,.12);
     }
-    .lf-input-wrap input.error { border-color: var(--danger); }
-
-    /* Password toggle */
     .pw-toggle {
       position: absolute;
       right: 14px; top: 50%;
@@ -257,11 +309,6 @@
       transition: opacity .2s;
     }
     .pw-toggle:hover { opacity: 1; }
-
-    .error-msg { color: var(--danger); font-size: .78rem; margin-top: 5px; display: none; }
-    .error-msg.show { display: block; }
-
-    /* Remember + forgot */
     .lf-row {
       display: flex;
       align-items: center;
@@ -284,8 +331,6 @@
       font-weight: 600;
     }
     .lf-forgot:hover { text-decoration: underline; }
-
-    /* Submit button */
     .btn-login {
       width: 100%;
       padding: 13px;
@@ -304,43 +349,23 @@
     }
     .btn-login:hover  { opacity: .92; transform: translateY(-1px); box-shadow: 0 6px 24px rgba(46,134,222,.4); }
     .btn-login:active { transform: translateY(0); }
-
-    /* Loading spinner inside button */
-    .btn-login .spinner {
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,.4);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .6s linear infinite;
-      display: none;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .btn-login.loading .spinner { display: block; }
-    .btn-login.loading .btn-label { opacity: .6; }
-
-    /* Alert box */
     .alert-box {
       border-radius: 10px;
       padding: 12px 16px;
       font-size: .84rem;
       font-weight: 500;
       margin-bottom: 20px;
-      display: none;
+      display: flex;
       align-items: center;
       gap: 10px;
+      background: #fde8e8; color: var(--danger); border: 1px solid #f5c6c6;
     }
-    .alert-box.show { display: flex; }
-    .alert-box.error   { background: #fde8e8; color: var(--danger); border: 1px solid #f5c6c6; }
-    .alert-box.success { background: #d4f7f4; color: #0f9b8e;      border: 1px solid #b2ede8; }
-
     .login-divider {
       text-align: center;
       font-size: .78rem;
       color: var(--muted);
       margin: 22px 0 0;
     }
-
-    /* Responsive */
     @media (max-width: 820px) {
       .login-left  { display: none; }
       .login-right { padding: 24px 16px; }
@@ -370,33 +395,25 @@
     </div>
     <div class="left-features">
       <div class="feat-item">
-        <div class="feat-dot">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
+        <div class="feat-dot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
         Secure role-based access control
       </div>
       <div class="feat-item">
-        <div class="feat-dot">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
+        <div class="feat-dot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
         Automated mark calculation
       </div>
       <div class="feat-item">
-        <div class="feat-dot">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
+        <div class="feat-dot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
         Real-time internship tracking
       </div>
       <div class="feat-item">
-        <div class="feat-dot">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
+        <div class="feat-dot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
         Comprehensive result viewing
       </div>
     </div>
   </div>
 
-  <div class="left-footer">© 2025 University of Nottingham Malaysia. All rights reserved.</div>
+  <div class="left-footer">&copy; 2025 University of Nottingham Malaysia. All rights reserved.</div>
 </div>
 
 <!-- ── RIGHT LOGIN PANEL ── -->
@@ -406,55 +423,62 @@
     <div class="login-card-title">Welcome back</div>
     <div class="login-card-sub">Sign in to your account to continue.</div>
 
-    <!-- Role toggle -->
-    <div class="role-toggle">
-      <input type="radio" name="role" id="roleAdmin" value="admin" checked/>
-      <label for="roleAdmin">Admin</label>
-      <input type="radio" name="role" id="roleAssessor" value="assessor"/>
-      <label for="roleAssessor">Assessor</label>
-      <div class="toggle-pill"></div>
-    </div>
-
-    <!-- Alert box -->
-    <div class="alert-box" id="alertBox"></div>
-
-    <!-- Username -->
-    <div class="lf-group">
-      <label>Username</label>
-      <div class="lf-input-wrap">
-        <svg class="lf-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-        <input type="text" id="fUsername" placeholder="Enter your username" autocomplete="username"/>
+    <!-- Show error from PHP if login failed -->
+    <?php if ($error): ?>
+      <div class="alert-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <?= htmlspecialchars($error) ?>
       </div>
-      <div class="error-msg" id="errUsername">Username is required.</div>
-    </div>
+    <?php endif; ?>
 
-    <!-- Password -->
-    <div class="lf-group">
-      <label>Password</label>
-      <div class="lf-input-wrap">
-        <svg class="lf-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <input type="password" id="fPassword" placeholder="Enter your password" autocomplete="current-password"/>
-        <button class="pw-toggle" type="button" onclick="togglePw()" id="pwToggleBtn" title="Show/hide password">
-          <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+    <!-- Form now submits to THIS SAME FILE via POST -->
+    <form method="POST" action="login_page.php">
+
+      <!-- Role toggle -->
+      <div class="role-toggle">
+        <input type="radio" name="role" id="roleAdmin" value="admin" checked/>
+        <label for="roleAdmin">Admin</label>
+        <input type="radio" name="role" id="roleAssessor" value="assessor"/>
+        <label for="roleAssessor">Assessor</label>
+        <div class="toggle-pill"></div>
       </div>
-      <div class="error-msg" id="errPassword">Password is required.</div>
-    </div>
 
-    <!-- Remember + Forgot -->
-    <div class="lf-row">
-      <label class="lf-remember">
-        <input type="checkbox" id="rememberMe"/>
-        Remember me
-      </label>
-      <a href="#" class="lf-forgot">Forgot password?</a>
-    </div>
+      <!-- Username -->
+      <div class="lf-group">
+        <label>Username</label>
+        <div class="lf-input-wrap">
+          <svg class="lf-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          <input type="text" name="username" id="fUsername" placeholder="Enter your username" autocomplete="username" required/>
+        </div>
+      </div>
 
-    <!-- Submit -->
-    <button class="btn-login" id="loginBtn" onclick="handleLogin()">
-      <div class="spinner"></div>
-      <span class="btn-label">Sign In</span>
-    </button>
+      <!-- Password -->
+      <div class="lf-group">
+        <label>Password</label>
+        <div class="lf-input-wrap">
+          <svg class="lf-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" name="password" id="fPassword" placeholder="Enter your password" autocomplete="current-password" required/>
+          <button class="pw-toggle" type="button" onclick="togglePw()" title="Show/hide password">
+            <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Remember + Forgot -->
+      <div class="lf-row">
+        <label class="lf-remember">
+          <input type="checkbox" id="rememberMe"/>
+          Remember me
+        </label>
+        <a href="#" class="lf-forgot">Forgot password?</a>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-login">
+        <span class="btn-label">Sign In</span>
+      </button>
+
+    </form>
 
     <div class="login-divider">
       Having trouble? Contact your system administrator.
@@ -464,14 +488,6 @@
 </div>
 
 <script>
-  /* ── DEMO CREDENTIALS ── */
-  const USERS = [
-    { username: 'admin',    password: 'admin123',    role: 'admin',    redirect: 'Admin_page.html' },
-    { username: 'assessor', password: 'assess123',   role: 'assessor', redirect: 'Assessor_page.html' },
-    { username: 'drtan',    password: 'drtan123',    role: 'assessor', redirect: 'Assessor_page.html' },
-    { username: 'dryap',    password: 'dryap123',    role: 'assessor', redirect: 'Assessor_page.html' },
-  ];
-
   /* ── PASSWORD VISIBILITY TOGGLE ── */
   let pwVisible = false;
   function togglePw() {
@@ -479,78 +495,9 @@
     const input = document.getElementById('fPassword');
     input.type = pwVisible ? 'text' : 'password';
     document.getElementById('eyeIcon').innerHTML = pwVisible
-      ? `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>`
-      : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
   }
-
-  /* ── ALERT ── */
-  function showAlert(msg, type) {
-    const el = document.getElementById('alertBox');
-    const icon = type === 'error'
-      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
-      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`;
-    el.innerHTML = icon + msg;
-    el.className = `alert-box show ${type}`;
-  }
-  function hideAlert() { document.getElementById('alertBox').className = 'alert-box'; }
-
-  /* ── VALIDATION ── */
-  function clearErrors() {
-    document.querySelectorAll('.error-msg').forEach(e => e.classList.remove('show'));
-    document.querySelectorAll('.lf-input-wrap input').forEach(i => i.classList.remove('error'));
-    hideAlert();
-  }
-
-  function validate() {
-    clearErrors(); let ok = true;
-    const u = document.getElementById('fUsername').value.trim();
-    const p = document.getElementById('fPassword').value;
-    if (!u) {
-      document.getElementById('errUsername').classList.add('show');
-      document.getElementById('fUsername').classList.add('error');
-      ok = false;
-    }
-    if (!p) {
-      document.getElementById('errPassword').classList.add('show');
-      document.getElementById('fPassword').classList.add('error');
-      ok = false;
-    }
-    return ok;
-  }
-
-  /* ── LOGIN HANDLER ── */
-  function handleLogin() {
-    if (!validate()) return;
-
-    const btn      = document.getElementById('loginBtn');
-    const username = document.getElementById('fUsername').value.trim().toLowerCase();
-    const password = document.getElementById('fPassword').value;
-    const role     = document.querySelector('input[name="role"]:checked').value;
-
-    // Loading state
-    btn.classList.add('loading');
-    btn.disabled = true;
-
-    setTimeout(() => {
-      btn.classList.remove('loading');
-      btn.disabled = false;
-
-      const user = USERS.find(u => u.username === username && u.password === password && u.role === role);
-
-      if (user) {
-        showAlert('Login successful! Redirecting…', 'success');
-        setTimeout(() => { window.location.href = user.redirect; }, 1000);
-      } else {
-        showAlert('Invalid username, password, or role. Please try again.', 'error');
-        document.getElementById('fPassword').value = '';
-      }
-    }, 900);
-  }
-
-  /* Allow Enter key to submit */
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Enter') handleLogin();
-  });
 </script>
 </body>
 </html>
