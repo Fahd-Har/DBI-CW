@@ -254,7 +254,8 @@ $totalPending = getCount($conn, "
         <span class="tag">Edit / Delete</span>
       </div>
       <button class="mod-btn" onclick="window.location.href='User_Management_Student.html'">Manage Student Profiles →</button>
-      <button class="mod-btn" onclick="window.location.href='User_Management_Assessor.html'">Manage Assessor Profiles →</button>
+      <button class="mod-btn" onclick="window.location.href='User_Management_Lecturer.html'">Manage Lecturer Profiles →</button>
+      <button class="mod-btn" onclick="window.location.href='User_Management_IndustrySupervisor.html'">Manage Industry Supervisor Profiles →</button>
     </div>
 
     <!-- Internship Management -->
