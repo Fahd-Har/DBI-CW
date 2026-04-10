@@ -18,7 +18,8 @@
   <ul class="sidebar-nav">
     <li><a href="Admin_page.html"><img src="home.png" alt="Home Icon" class="icon"/> Dashboard</a></li>
     <li><a href="User_Management_Student.html"><img src="users.png" alt="Users Icon" class="icon"/> Student Management</a></li>
-    <li><a href="User_Management_Assessor.html"><img src="users.png" alt="Users Icon" class="icon"/> Assessor Management</a></li>
+    <li><a href="User_Management_Lecturer.html"><img src="users.png" alt="Users Icon" class="icon"/> Lecturer Management</a></li>
+    <li><a href="User_Management_IndustrySupervisor.html"><img src="users.png" alt="Users Icon" class="icon"/> Industry Supervisor Management</a></li>
     <li><a href="Internship_management.html" class="active"><img src="internship.png" alt="Internships Icon" class="icon"/> Internship Management</a></li>
     <li><a href="Result_Viewing.html"><img src="results.png" alt="Results Icon" class="icon"/> Result Viewing</a></li>
   </ul>
@@ -50,12 +51,25 @@
       <option value="Pending">Pending</option>
       <option value="Completed">Completed</option>
     </select>
-    <select id="assessorFilter" onchange="filterTable()">
-      <option value="">All Assessors</option>
+    <select id="lecturerFilter" onchange="filterTable()">
+      <option value="">All Lecturers</option>
       <option value="Dr. Tan">Dr. Tan</option>
       <option value="Dr. Yap">Dr. Yap</option>
       <option value="Dr. Chew">Dr. Chew</option>
       <option value="Mr. Chew">Mr. Chew</option>
+    </select>
+    <select id="companyFilter" onchange="filterTable()">
+        <option value="">Select Company</option>
+        <option value="Maybank">Maybank</option>
+        <option value="CIMB Group">CIMB Group</option>
+        <option value="Public Bank">Public Bank</option>
+        <option value="Tenaga Nasional">Tenaga Nasional</option>
+        <option value="Petronas">Petronas</option>
+        <option value="Axiata Group">Axiata Group</option>
+        <option value="Maxis">Maxis</option>
+        <option value="Telekom Malaysia">Telekom Malaysia</option>
+        <option value="Top Glove">Top Glove</option>
+        <option value="YTL Corporation">YTL Corporation</option>
     </select>
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
@@ -73,7 +87,7 @@
           <th>Student</th>
           <th>Programme</th>
           <th>Company</th>
-          <th>Assessor</th>
+          <th>Lecturer</th>
           <th>Start Date</th>
           <th>Status</th>
           <th>Actions</th>
@@ -110,19 +124,33 @@
       </div>
     
       <div class="form-group">
-        <label>Assessor *</label>
-        <select id="fAssessor">
-          <option value="">Select assessor</option>
-          <option>Dr. Tan</option><option>Dr. Yap</option>
-          <option>Dr. Chew</option><option>Mr. Chew</option>
+        <label>Lecturer *</label>
+        <select id="fLecturer">
+          <option value="">Select lecturer</option>
+          <option>Dr. Tan</option>
+          <option>Dr. Yap</option>
+          <option>Dr. Chew</option>
+          <option>Mr. Chew</option>
         </select>
-        <div class="error-msg" id="errAssessor">Assessor is required.</div>
+        <div class="error-msg" id="errLecturer">Lecturer is required.</div>
       </div>
     </div>
 
     <div class="form-group">
       <label>Company Name *</label>
-      <input type="text" id="fCompany" placeholder="e.g. JP Morgan"/>
+        <select id="fCompany">
+          <option value="">Select Company</option>
+          <option value="Maybank">Maybank</option>
+          <option value="CIMB Group">CIMB Group</option>
+          <option value="Public Bank">Public Bank</option>
+          <option value="Tenaga Nasional">Tenaga Nasional</option>
+          <option value="Petronas">Petronas</option>
+          <option value="Axiata Group">Axiata Group</option>
+          <option value="Maxis">Maxis</option>
+          <option value="Telekom Malaysia">Telekom Malaysia</option>
+          <option value="Top Glove">Top Glove</option>
+          <option value="YTL Corporation">YTL Corporation</option>
+        </select>
       <div class="error-msg" id="errCompany">Company name is required.</div>
     </div>
 
@@ -155,7 +183,7 @@
 </div>
 
 <script>
-    /* ── STUDENT DATA (shared with Student Management) ── */
+    /* ── STUDENT DATA ── */
   const students = [
     { id:'20001', name:'Lim Wei Xian',  prog:'CS' },
     { id:'20002', name:'Nurul Aisyah',  prog:'Finance' },
@@ -184,7 +212,7 @@
     document.getElementById('modalBadge').textContent   = 'New';
     document.getElementById('fStudentId').value = '';
     document.getElementById('fStudentId').disabled = false;
-    document.getElementById('fAssessor').value  = '';
+    document.getElementById('fLecturer').value  = '';
     document.getElementById('fCompany').value   = '';
     document.getElementById('fRemarks').value   = '';
     document.getElementById('fStatus').value    = 'Pending';
@@ -201,7 +229,7 @@
     document.getElementById('fStudentId').value   = editingRow.dataset.id;
     document.getElementById('fStudentId').disabled = true;
     document.getElementById('fCompany').value     = cells[2].textContent.trim();
-    document.getElementById('fAssessor').value    = cells[3].textContent.trim();
+    document.getElementById('fLecturer').value    = cells[3].textContent.trim();
     document.getElementById('fStartDate').value   = editingRow.dataset.start || '';
     document.getElementById('fStatus').value      = editingRow.dataset.status;
     clearErrors();
@@ -224,9 +252,22 @@
       }
     };
     check('fStudentId',   'errStudentId');
-    check('fAssessor',    'errAssessor');
+    check('fLecturer',    'errLecturer');
     check('fCompany',     'errCompany');
     check('fStartDate',   'errStartDate');
+
+    if (ok && !editingRow) {
+      const newId = document.getElementById('fStudentId').value;
+      const existingRows = document.querySelectorAll('#tableBody tr');
+      for (let row of existingRows) {
+        if (row.dataset.id === newId) {
+          alert("Error: This student already has an internship record.");
+          ok = false;
+          break;
+        }
+      }
+    }
+
     return ok;
   }
  
@@ -238,7 +279,7 @@
     const name     = student ? student.name : id;
     const prog     = student ? student.prog : '–';
     const company  = document.getElementById('fCompany').value.trim();
-    const assessor = document.getElementById('fAssessor').value;
+    const lecturer = document.getElementById('fLecturer').value;
     const start    = document.getElementById('fStartDate').value;
     const status   = document.getElementById('fStatus').value;
     const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
@@ -247,7 +288,7 @@
  
     const rowHTML = `
       <td><div class="student-cell"><div class="stu-avatar">${initials}</div><div><div class="stu-name">${name}</div><div class="stu-id">${id}</div></div></div></td>
-      <td>${prog}</td><td>${company}</td><td>${assessor}</td><td>${dateStr}</td>
+      <td>${prog}</td><td>${company}</td><td>${lecturer}</td><td>${dateStr}</td>
       <td><span class="badge ${statusClass}">${status}</span></td>
       <td><div class="action-btns"><button class="btn-edit" onclick="editRow(this)">Edit</button><button class="btn-del" onclick="deleteRow(this)">Delete</button></div></td>`;
  
@@ -256,12 +297,13 @@
       editingRow.dataset.name = name;
       editingRow.dataset.id   = id;
       editingRow.dataset.status = status;
-      editingRow.dataset.assessor = assessor;
+      editingRow.dataset.lecturer = lecturer;
       editingRow.dataset.start = start;
     } else {
       const tr = document.createElement('tr');
       tr.dataset.name = name; tr.dataset.id = id;
-      tr.dataset.status = status; tr.dataset.assessor = assessor;
+      tr.dataset.status = status; tr.dataset.lecturer = lecturer;
+      tr.dataset.company = company;
       tr.dataset.start = start;
       tr.innerHTML = rowHTML;
       document.getElementById('tableBody').appendChild(tr);
@@ -281,13 +323,15 @@
   function filterTable() {
     const q   = document.getElementById('searchInput').value.toLowerCase();
     const st  = document.getElementById('statusFilter').value;
-    const as  = document.getElementById('assessorFilter').value;
+    const lec  = document.getElementById('lecturerFilter').value;
+    const company = document.getElementById('companyFilter').value;
     let vis = 0;
     document.querySelectorAll('#tableBody tr').forEach(row => {
       const matchQ  = !q  || row.dataset.name.toLowerCase().includes(q) || row.dataset.id.includes(q);
       const matchSt = !st || row.dataset.status === st;
-      const matchAs = !as || row.dataset.assessor === as;
-      const show = matchQ && matchSt && matchAs;
+      const matchAs = !lec || row.dataset.lecturer === lec;
+      const matchCompany = !company || row.dataset.company === company;
+      const show = matchQ && matchSt && matchAs && matchCompany;
       row.style.display = show ? '' : 'none';
       if (show) vis++;
     });

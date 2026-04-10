@@ -19,7 +19,8 @@
   <ul class="sidebar-nav">
     <li><a href="Admin_page.html"><img src="home.png" alt="Home Icon" class="icon"/> Dashboard</a></li>
     <li><a href="User_Management_Student.html"><img src="users.png" alt="Users Icon" class="icon"/> Student Management</a></li>
-    <li><a href="User_Management_Assessor.html" class="active"><img src="users.png" alt="Users Icon" class="icon"/> Assessor Management</a></li>
+    <li><a href="User_Management_Lecturer.html"><img src="users.png" alt="Users Icon" class="icon"/> Lecturer Management</a></li>
+    <li><a href="User_Management_IndustrySupervisor.html" class="active"><img src="users.png" alt="Users Icon" class="icon"/> Industry Supervisor Management</a></li>
     <li><a href="Internship_management.html"><img src="internship.png" alt="Internships Icon" class="icon"/> Internship Management</a></li>
     <li><a href="Result_Viewing.html"><img src="results.png" alt="Results Icon" class="icon"/> Result Viewing</a></li>
   </ul>
@@ -35,26 +36,28 @@
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="topbar-title">
-      <div class="breadcrumb"><a href="Admin_page.html">Dashboard</a> / Assessor Management</div>
-      <h1>Assessor Profiles</h1>
-      <p>Add new or edit existing assessor profiles.</p>
+      <div class="breadcrumb"><a href="Admin_page.html">Dashboard</a> / Supervisor Management</div>
+      <h1>Supervisor Profiles</h1>
+      <p>Add new or edit existing supervisor profiles.</p>
     </div>
-    <button class="btn-primary" onclick="openModal()">＋ Add New Assessor</button>
+    <button class="btn-primary" onclick="openModal()">＋ Add New Supervisor</button>
   </div>
 
   <!-- SEARCH BAR -->
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍  Search by assessor ID or name…" oninput="filterTable()"/>
-    <select id="departmentFilter" onchange="filterTable()">
-      <option value="">All Departments/Schools</option>
-      <option value="School of Computer and Mathematical Sciences">School of Computer and Mathematical Sciences</option>
-      <option value="School of Biological and Environmental Sciences">School of Biological and Environmental Sciences</option>
-      <option value="School of Pharmacy">School of Pharmacy</option>
-      <option value="School of Psychology">School of Psychology</option>
-      <option value="Department of Chemical & Environmental Engineering">Department of Chemical & Environmental Engineering</option>
-      <option value="Department of Civil Engineering">Department of Civil Engineering</option>
-      <option value="Department of Electrical and Electronic Engineering">Department of Electrical and Electronic Engineering</option>
-      <option value="Department of Mechanical, Materials and Manufacturing Engineering">Department of Mechanical, Materials and Manufacturing Engineering</option>
+    <input type="text" id="searchInput" placeholder="🔍  Search by supervisor ID or name…" oninput="filterTable()"/>
+    <select id="companyFilter" onchange="filterTable()">
+        <option value="">Company</option>
+        <option value="Maybank">Maybank</option>
+        <option value="CIMB Group">CIMB Group</option>
+        <option value="Public Bank">Public Bank</option>
+        <option value="Tenaga Nasional">Tenaga Nasional</option>
+        <option value="Petronas">Petronas</option>
+        <option value="Axiata Group">Axiata Group</option>
+        <option value="Maxis">Maxis</option>
+        <option value="Telekom Malaysia">Telekom Malaysia</option>
+        <option value="Top Glove">Top Glove</option>
+        <option value="YTL Corporation">YTL Corporation</option>
     </select>
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
@@ -63,15 +66,15 @@
      <!-- TABLE -->
   <div class="table-card">
     <div class="table-header">
-      <span>Assessor Profiles</span>
+      <span>Supervisor Profiles</span>
       <span class="table-count" id="recordCount">0 Records</span>
     </div>
     <table>
       <thead>
         <tr>
-          <th>Assessor ID</th>
+          <th>Supervisor ID</th>
           <th>Full Name</th>
-          <th>Department/School</th>
+          <th>Company</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -92,36 +95,38 @@
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
     <div class="modal-title">
-      <span id="modalHeading">Add Assessor</span>
+      <span id="modalHeading">Add Supervisor</span>
       <span class="badge-teal" id="modalBadge">New</span>
     </div>
 
     <div class="form-group">
-      <label>Assessor ID *</label>
-      <input type="text" id="fStudentId" placeholder="e.g. 20001"/>
-      <div class="error-msg" id="errStudentId">Assessor ID is required.</div>
+      <label>Supervisor ID *</label>
+      <input type="text" id="fSupervisorId" placeholder="e.g. 20001"/>
+      <div class="error-msg" id="errSupervisorId">Supervisor ID is required.</div>
     </div>
       
     <div class="form-group">
-      <label>Assessor Name *</label>
-      <input type="text" id="fStudentName" placeholder="Full name"/>
-      <div class="error-msg" id="errStudentName">Assessor name is required.</div>
+      <label>Supervisor Name *</label>
+      <input type="text" id="fSupervisorName" placeholder="Full name"/>
+      <div class="error-msg" id="errSupervisorName">Supervisor name is required.</div>
     </div>
 
     <div class="form-group">
-      <label>Department *</label>
-      <select id="fDepartment">
-        <option value="">Select department</option>
-        <option value="School of Computer and Mathematical Sciences">School of Computer and Mathematical Sciences</option>
-        <option value="School of Biological and Environmental Sciences">School of Biological and Environmental Sciences</option>
-        <option value="School of Pharmacy">School of Pharmacy</option>
-        <option value="School of Psychology">School of Psychology</option>
-        <option value="Department of Chemical & Environmental Engineering">Department of Chemical & Environmental Engineering</option>
-        <option value="Department of Civil Engineering">Department of Civil Engineering</option>
-        <option value="Department of Electrical and Electronic Engineering">Department of Electrical and Electronic Engineering</option>
-        <option value="Department of Mechanical, Materials and Manufacturing Engineering">Department of Mechanical, Materials and Manufacturing Engineering</option>
-      </select>
-      <div class="error-msg" id="errDepartment">Department is required.</div>
+      <label>Company *</label>
+      <select id="fCompany">
+        <option value="">Select Company</option>
+        <option value="Maybank">Maybank</option>
+        <option value="CIMB Group">CIMB Group</option>
+        <option value="Public Bank">Public Bank</option>
+        <option value="Tenaga Nasional">Tenaga Nasional</option>
+        <option value="Petronas">Petronas</option>
+        <option value="Axiata Group">Axiata Group</option>
+        <option value="Maxis">Maxis</option>
+        <option value="Telekom Malaysia">Telekom Malaysia</option>
+        <option value="Top Glove">Top Glove</option>
+        <option value="YTL Corporation">YTL Corporation</option>
+    </select>
+      <div class="error-msg" id="errCompany">Company is required.</div>
     </div>
 
     <div class="modal-footer">
@@ -137,10 +142,10 @@
 
   function openModal() {
     editingRow = null;
-    document.getElementById('modalHeading').textContent = 'Add Internship';
+    document.getElementById('modalHeading').textContent = 'Add Supervisor';
     document.getElementById('modalBadge').textContent   = 'New';
-    ['fStudentId','fStudentName'].forEach(id => document.getElementById(id).value = '');
-    ['fDepartment'].forEach(id => document.getElementById(id).value = '');
+    ['fSupervisorId','fSupervisorName'].forEach(id => document.getElementById(id).value = '');
+    ['fCompany'].forEach(id => document.getElementById(id).value = '');
     clearErrors();
     document.getElementById('modalOverlay').classList.add('open');
   }
@@ -148,11 +153,11 @@
   function editRow(btn) {
     editingRow = btn.closest('tr');
     const cells = editingRow.querySelectorAll('td');
-    document.getElementById('modalHeading').textContent = 'Edit Assessor';
+    document.getElementById('modalHeading').textContent = 'Edit Supervisor';
     document.getElementById('modalBadge').textContent   = 'Editing';
-    document.getElementById('fStudentId').value = cells[0].textContent;
-    document.getElementById('fStudentName').value = cells[1].textContent;
-    document.getElementById('fDepartment').value = cells[2].textContent;
+    document.getElementById('fSupervisorId').value = cells[0].textContent;
+    document.getElementById('fSupervisorName').value = cells[1].textContent;
+    document.getElementById('fCompany').value = cells[2].textContent;
     clearErrors();
     document.getElementById('modalOverlay').classList.add('open');
   }
@@ -172,23 +177,23 @@
         document.getElementById(errId).classList.add('show'); ok = false;
       }
     };
-    check('fStudentId',   'errStudentId');
-    check('fStudentName', 'errStudentName');
-    check('fDepartment',   'errDepartment');
+    check('fSupervisorId',   'errSupervisorId');
+    check('fSupervisorName', 'errSupervisorName');
+    check('fCompany',   'errCompany');
     return ok;
   }
 
   /* ── SAVE ── */
   function saveForm() {
     if (!validate()) return;
-    const id      = document.getElementById('fStudentId').value.trim();
-    const name    = document.getElementById('fStudentName').value.trim();
-    const dep    = document.getElementById('fDepartment').value;
+    const id      = document.getElementById('fSupervisorId').value.trim();
+    const name    = document.getElementById('fSupervisorName').value.trim();
+    const company    = document.getElementById('fCompany').value;
 
     const rowHTML = `
       <td>${id}</td>
       <td>${name}</td>
-      <td>${dep}</td>
+      <td>${company}</td>
       <td>
         <button onclick="editRow(this)">Edit</button>
         <button onclick="deleteRow(this)">Delete</button>
@@ -198,11 +203,11 @@
       editingRow.innerHTML = rowHTML;
       editingRow.dataset.name = name;
       editingRow.dataset.id   = id;
-      editingRow.dataset.programme = prog;
+      editingRow.dataset.company = company;
     } else {
       const tr = document.createElement('tr');
       tr.dataset.name = name; tr.dataset.id = id;
-      tr.dataset.programme = prog;
+      tr.dataset.company = company;
       tr.innerHTML = rowHTML;
       document.getElementById('tableBody').appendChild(tr);
     }
@@ -211,7 +216,7 @@
 
   /* ── DELETE ── */
   function deleteRow(btn) {
-    if (confirm('Delete this assessor record?')) {
+    if (confirm('Delete this supervisor record?')) {
       btn.closest('tr').remove();
       updateCount();
     }
@@ -220,14 +225,14 @@
   /* ── FILTER ── */
   function filterTable() {
     const q = document.getElementById('searchInput').value.toLowerCase();
-    const dep = document.getElementById('departmentFilter').value;
+    const company = document.getElementById('companyFilter').value;
 
     let vis = 0;
 
     document.querySelectorAll('#tableBody tr').forEach(row => {
       const match = !q || row.dataset.name.toLowerCase().includes(q) || row.dataset.id.includes(q);
-      const depMatch = !dep || row.dataset.department === dep;
-      const show = match && depMatch;
+      const companyMatch = !company || row.dataset.company === company;
+      const show = match && companyMatch;
       row.style.display = show ? '' : 'none';
       if (show) vis++;
     });
