@@ -25,10 +25,11 @@ $error   = $_GET['error'] ?? '';
     UNM
   </div>
   <div class="sidebar-sub">Internship Result Management System</div>
-  <ul class="sidebar-nav">
+    <ul class="sidebar-nav">
     <li><a href="Admin_page.php"><img src="home.png" alt="" class="icon"/> Dashboard</a></li>
     <li><a href="User_Management_Student.php" class="active"><img src="users.png" alt="" class="icon"/> Student Management</a></li>
-    <li><a href="User_Management_Assessor.php"><img src="users.png" alt="" class="icon"/> Assessor Management</a></li>
+    <li><a href="User_Management_Lecturer.php"><img src="users.png" alt="" class="icon"/> Lecturer Management</a></li>
+    <li><a href="User_Management_IndustrySupervisor.php"><img src="users.png" alt="" class="icon"/> Industry Supervisor Management</a></li>
     <li><a href="Internship_management.php"><img src="internship.png" alt="" class="icon"/> Internship Management</a></li>
     <li><a href="Result_viewing.php"><img src="results.png" alt="" class="icon"/> Result Viewing</a></li>
   </ul>
