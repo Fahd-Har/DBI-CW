@@ -114,7 +114,7 @@ function statusFromDates($start, $end) {
             data-student-id="<?= $row['StudentID'] ?>"
             data-name="<?= htmlspecialchars($row['StudentName']) ?>"
             data-status="<?= $status ?>"
-            data-company="<?= htmlspecialchars($row['CompanyName']) ?>"
+            data-company="<?= htmlspecialchars($row['CompanyName'] ?? '') ?>"
             data-lecturer="<?= $row['LecturerID'] ?>"
             data-supervisor="<?= $row['SupervisorID'] ?>"
             data-start="<?= $row['Start_Date'] ?>"
@@ -126,7 +126,7 @@ function statusFromDates($start, $end) {
             </div>
           </td>
           <td><?= htmlspecialchars($row['Programme']) ?></td>
-          <td><?= htmlspecialchars($row['CompanyName']) ?></td>
+          <td><?= htmlspecialchars($row['CompanyName'] ?? '-') ?></td>
           <td><?= htmlspecialchars($row['LecturerName'] ?? '-') ?></td>
           <td><?= htmlspecialchars($row['SupervisorName'] ?? '-') ?></td>
           <td><?= date('d M Y', strtotime($row['Start_Date'])) ?></td>

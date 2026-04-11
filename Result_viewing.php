@@ -179,7 +179,7 @@ function grade($m) {
         <tr data-id="<?= $r['StudentID'] ?>"
             data-name="<?= htmlspecialchars($r['StudentName']) ?>"
             data-prog="<?= htmlspecialchars($r['Programme']) ?>"
-            data-company="<?= htmlspecialchars($r['CompanyName']) ?>">
+            data-company="<?= htmlspecialchars($r['CompanyName'] ?? '') ?>">
           <td>
             <div class="student-cell">
               <div class="stu-avatar"><?= strtoupper(substr($r['StudentName'],0,2)) ?></div>
