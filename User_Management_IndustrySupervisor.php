@@ -4,7 +4,7 @@ require_once 'auth_check.php';
 requireRole('admin');
 
 $supervisors = $conn->query("
-  SELECT s.SupervisorID, s.Name, s.Department, u.Username
+  SELECT s.SupervisorID, s.Name, s.Company, u.Username
   FROM supervisor s
   LEFT JOIN users u ON u.UserID = s.UserID
   ORDER BY s.SupervisorID

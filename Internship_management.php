@@ -223,6 +223,11 @@ function statusFromDates($start, $end) {
     document.getElementById('modalBadge').textContent = 'New';
     document.getElementById('fStudentId').value = '';
     document.getElementById('fStudentId').disabled = false;
+
+    // FIX: Remove hidden input so it doesn't interfere when adding
+    const hidden = document.getElementById('fStudentIdHidden');
+    if (hidden) hidden.remove();
+
     document.getElementById('fLecturer').value = '';
     document.getElementById('fSupervisor').value = '';
     document.getElementById('fCompany').value = '';
@@ -239,6 +244,18 @@ function statusFromDates($start, $end) {
     document.getElementById('modalBadge').textContent = 'Editing';
     document.getElementById('fStudentId').value = tr.dataset.studentId;
     document.getElementById('fStudentId').disabled = true;
+
+    // FIX: Add a hidden input so student_id still submits when select is disabled
+    let hiddenInput = document.getElementById('fStudentIdHidden');
+    if (!hiddenInput) {
+        hiddenInput = document.createElement('input');
+        hiddenInput.type = 'hidden';
+        hiddenInput.name = 'student_id';
+        hiddenInput.id = 'fStudentIdHidden';
+        document.getElementById('fStudentId').parentNode.appendChild(hiddenInput);
+    }
+    hiddenInput.value = tr.dataset.studentId;
+
     document.getElementById('fLecturer').value = tr.dataset.lecturer;
     document.getElementById('fSupervisor').value = tr.dataset.supervisor;
     document.getElementById('fCompany').value = tr.dataset.company;
@@ -264,5 +281,6 @@ function statusFromDates($start, $end) {
     document.getElementById('recordCount').textContent = vis + ' Record' + (vis !== 1 ? 's' : '');
   }
 </script>
+
 </body>
 </html>

@@ -60,13 +60,16 @@ $error   = $_GET['error'] ?? '';
   <!-- SEARCH BAR -->
   <div class="filter-bar">
     <input type="text" id="searchInput" placeholder="🔍  Search by student ID or name…" oninput="filterTable()"/>
-    <select id="programmeFilter" onchange="filterTable()">
+        <select id="programmeFilter" onchange="filterTable()">
       <option value="">All Programmes</option>
-      <option value="CS">Computer Science</option>
-      <option value="Maths">Mathematics</option>
-      <option value="Engineering">Engineering</option>
-      <option value="Finance">Finance</option>
+      <?php
+        $programmes = $conn->query("SELECT DISTINCT Programme FROM student ORDER BY Programme");
+        while ($p = $programmes->fetch_assoc()):
+      ?>
+        <option value="<?= htmlspecialchars($p['Programme']) ?>"><?= htmlspecialchars($p['Programme']) ?></option>
+      <?php endwhile; ?>
     </select>
+
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
 

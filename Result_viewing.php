@@ -271,13 +271,16 @@ while ($b = $bRes->fetch_assoc()) {
 
   <div class="filter-bar">
     <input type="text" id="searchInput" placeholder="🔍  Search by ID, name or company…" oninput="filterTable()"/>
-    <select id="progFilter" onchange="filterTable()">
+        <select id="progFilter" onchange="filterTable()">
       <option value="">All Programmes</option>
-      <option value="CS">CS</option>
-      <option value="Engineering">Engineering</option>
-      <option value="Finance">Finance</option>
-      <option value="Maths">Maths</option>
+      <?php
+        $programmes = $conn->query("SELECT DISTINCT Programme FROM student ORDER BY Programme");
+        while ($p = $programmes->fetch_assoc()):
+      ?>
+        <option value="<?= htmlspecialchars($p['Programme']) ?>"><?= htmlspecialchars($p['Programme']) ?></option>
+      <?php endwhile; ?>
     </select>
+
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
 
@@ -405,12 +408,12 @@ while ($b = $bRes->fetch_assoc()) {
       <div class="bd-total-card lec">
         <div class="bd-total-label">Lecturer Total</div>
         <div class="bd-total-val" id="bdLecTotal">–</div>
-        <div class="bd-total-note">Out of 90</div>
+        <div class="bd-total-note">Out of 100</div>
       </div>
       <div class="bd-total-card sup">
         <div class="bd-total-label">Supervisor Total</div>
         <div class="bd-total-val" id="bdSupTotal">–</div>
-        <div class="bd-total-note">Out of 90</div>
+        <div class="bd-total-note">Out of 100</div>
       </div>
       <div class="bd-total-card final">
         <div class="bd-total-label">Final Mark</div>
