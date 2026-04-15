@@ -11,13 +11,7 @@ $stmt = $conn->prepare("
     sup_a.AssessmentID AS SupAssessmentID,
     sup_a.UndertakingTaskOrProject, sup_a.HealthSafetyWorkplace, sup_a.ConnectivityTheoreticalKnowledge,
     sup_a.PresentationWrittenDocument, sup_a.ClarityLanguageIllustration, sup_a.LifelongLearningActivities,
-    sup_a.ProjectManagement, sup_a.TimeManagement, sup_a.Comments AS SupComments,
-    (
-      SELECT (IFNULL(UndertakingTaskOrProject,0)+IFNULL(HealthSafetyWorkplace,0)+IFNULL(ConnectivityTheoreticalKnowledge,0)
-              +IFNULL(PresentationWrittenDocument,0)+IFNULL(ClarityLanguageIllustration,0)+IFNULL(LifelongLearningActivities,0)
-              +IFNULL(ProjectManagement,0)+IFNULL(TimeManagement,0))
-      FROM assessment a WHERE a.InternshipID = i.InternshipID AND a.LecturerID IS NOT NULL LIMIT 1
-    ) AS LecturerTotal
+    sup_a.ProjectManagement, sup_a.TimeManagement, sup_a.Comments AS SupComments
   FROM internship i
   JOIN student s ON s.StudentID = i.StudentID
   LEFT JOIN company c ON c.CompanyID = i.CompanyID
@@ -38,9 +32,6 @@ while ($r = $result->fetch_assoc()) {
                   + (int)$r['ProjectManagement'] + (int)$r['TimeManagement'];
     }
     $r['SupervisorTotal'] = $supTotal;
-    $r['FinalMark'] = ($supTotal !== null && $r['LecturerTotal'] !== null)
-        ? round(($supTotal + $r['LecturerTotal']) / 2, 1)
-        : null;
     $rows[] = $r;
 }
 
@@ -102,9 +93,7 @@ $error   = $_GET['error'] ?? '';
           <th>Student Name</th>
           <th>Programme</th>
           <th>Company</th>
-          <th>Marks from Lecturer</th>
           <th>Marks from Industry Supervisor</th>
-          <th>Final Mark</th>
           <th>Action</th>
         </tr>
       </thead>
@@ -126,9 +115,7 @@ $error   = $_GET['error'] ?? '';
           <td><?= htmlspecialchars($r['StudentName']) ?></td>
           <td><?= htmlspecialchars($r['Programme']) ?></td>
           <td><?= htmlspecialchars($r['CompanyName'] ?? '-') ?></td>
-          <td><?= $r['LecturerTotal']   !== null ? $r['LecturerTotal']   : 'Pending' ?></td>
           <td><?= $r['SupervisorTotal'] !== null ? $r['SupervisorTotal'] : 'Pending' ?></td>
-          <td><?= $r['FinalMark']       !== null ? $r['FinalMark']       : 'Pending' ?></td>
           <td><button class="btn-edit" onclick="openMarksModal(this)"><?= $r['SupervisorTotal'] !== null ? 'Edit Marks' : 'Enter Marks' ?></button></td>
         </tr>
         <?php endforeach; ?>
