@@ -16,6 +16,14 @@ if ($action === 'add') {
         exit;
     }
 
+    $check = $conn->prepare("SELECT UserID FROM users WHERE Username = ?");
+    $check->bind_param("s", $username);
+    $check->execute();
+    if ($check->get_result()->num_rows > 0) {
+        header("Location: User_Management_IndustrySupervisor.php?error=Username already exists");
+        exit;
+    }
+    
     $conn->begin_transaction();
     try {
         $stmt = $conn->prepare("INSERT INTO users (Username, Password, Role) VALUES (?, ?, 'supervisor')");
@@ -23,7 +31,7 @@ if ($action === 'add') {
         $stmt->execute();
         $userId = $conn->insert_id;
 
-        $stmt2 = $conn->prepare("INSERT INTO supervisor (UserID, Name, Department) VALUES (?, ?, ?)");
+        $stmt2 = $conn->prepare("INSERT INTO supervisor (UserID, Name, Company) VALUES (?, ?, ?)");
         $stmt2->bind_param("iss", $userId, $name, $company);
         $stmt2->execute();
 
@@ -56,7 +64,7 @@ if ($action === 'edit') {
         $q->execute();
         $userId = $q->get_result()->fetch_assoc()['UserID'] ?? null;
 
-        $stmt = $conn->prepare("UPDATE supervisor SET Name = ?, Department = ? WHERE SupervisorID = ?");
+        $stmt = $conn->prepare("UPDATE supervisor SET Name = ?, Company = ? WHERE SupervisorID = ?");
         $stmt->bind_param("ssi", $name, $company, $id);
         $stmt->execute();
 

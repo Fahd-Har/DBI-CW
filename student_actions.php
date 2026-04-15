@@ -6,18 +6,27 @@ requireRole('admin');
 $action = $_POST['action'] ?? '';
 
 if ($action === 'add') {
-    $id   = intval($_POST['student_id'] ?? 0);
     $name = trim($_POST['name'] ?? '');
     $prog = trim($_POST['programme'] ?? '');
 
-    if ($id <= 0 || $name === '' || $prog === '') {
+    if ($name === '' || $prog === '') {
         header("Location: User_Management_Student.php?error=" . urlencode("All fields are required"));
         exit;
     }
 
+    $check = $conn->prepare("SELECT StudentID FROM student WHERE LOWER(Name) = LOWER(?)");
+    $check->bind_param("s", $name);
+    $check->execute();
+    $res = $check->get_result();
+
+    if ($res->num_rows > 0) {
+        header("Location: User_Management_Student.php?error=" . urlencode("Student name already exists"));
+        exit;
+    }
+
     try {
-        $stmt = $conn->prepare("INSERT INTO student (StudentID, Name, Programme) VALUES (?, ?, ?)");
-        $stmt->bind_param("iss", $id, $name, $prog);
+        $stmt = $conn->prepare("INSERT INTO student (Name, Programme) VALUES (?, ?)");
+        $stmt->bind_param("ss", $name, $prog);
         $stmt->execute();
         header("Location: User_Management_Student.php?success=Student added successfully");
     } catch (mysqli_sql_exception $e) {

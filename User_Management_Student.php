@@ -14,7 +14,6 @@ $error   = $_GET['error'] ?? '';
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Student Profiles – UniTrack</title>
   <link rel="stylesheet" href="style.css"/>
-
 </head>
 <body>
 
@@ -41,58 +40,88 @@ $error   = $_GET['error'] ?? '';
 
   <!-- TOPBAR -->
   <div class="topbar">
-    <div class="topbar-title">
+    <div>
       <div class="breadcrumb"><a href="Admin_page.php">Dashboard</a> / Student Management</div>
       <h1>Student Profiles</h1>
       <p>Add new or edit existing student profiles.</p>
     </div>
+
     <button class="btn-primary" onclick="openModal()">＋ Add New Student</button>
   </div>
 
-   <?php if ($success): ?>
-    <div style="background:#d4f7f4;color:#0f9b8e;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:.84rem;"><?= htmlspecialchars($success) ?></div>
+  <!-- SUCCESS / ERROR -->
+  <?php if ($success): ?>
+    <div style="background:#d4f7f4;color:#0f9b8e;padding:12px;border-radius:10px;margin-bottom:16px;">
+      <?= htmlspecialchars($success) ?>
+    </div>
   <?php endif; ?>
+
   <?php if ($error): ?>
-    <div style="background:#fde8e8;color:#e74c3c;padding:12px 16px;border-radius:10px;margin-bottom:16px;font-size:.84rem;"><?= htmlspecialchars($error) ?></div>
+    <div style="background:#fde8e8;color:#e74c3c;padding:12px;border-radius:10px;margin-bottom:16px;">
+      <?= htmlspecialchars($error) ?>
+    </div>
   <?php endif; ?>
 
-
-  <!-- SEARCH BAR -->
+  <!-- FILTER -->
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍  Search by student ID or name…" oninput="filterTable()"/>
-        <select id="programmeFilter" onchange="filterTable()">
+    <input type="text" id="searchInput" placeholder="🔍 Search by ID or name…" oninput="filterTable()"/>
+
+    <select id="programmeFilter" onchange="filterTable()">
       <option value="">All Programmes</option>
       <?php
         $programmes = $conn->query("SELECT DISTINCT Programme FROM student ORDER BY Programme");
         while ($p = $programmes->fetch_assoc()):
       ?>
-        <option value="<?= htmlspecialchars($p['Programme']) ?>"><?= htmlspecialchars($p['Programme']) ?></option>
+        <option value="<?= htmlspecialchars($p['Programme']) ?>">
+          <?= htmlspecialchars($p['Programme']) ?>
+        </option>
       <?php endwhile; ?>
     </select>
 
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
 
-    <!-- INTERNSHIP TABLE -->
-     <!-- TABLE -->
+  <!-- TABLE -->
   <div class="table-card">
-    <div class="table-header"><span>Student Profiles</span><span class="table-count" id="recordCount"><?= $students->num_rows ?> Records</span></div>
+    <div class="table-header">
+      <span>Student Profiles</span>
+      <span class="table-count" id="recordCount"><?= $students->num_rows ?> Records</span>
+    </div>
+
     <table>
-      <thead><tr><th>Student ID</th><th>Full Name</th><th>Programme</th><th>Actions</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Student ID</th>
+          <th>Full Name</th>
+          <th>Programme</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+
       <tbody id="tableBody">
         <?php while ($row = $students->fetch_assoc()): ?>
-        <tr data-id="<?= $row['StudentID'] ?>" data-name="<?= htmlspecialchars($row['Name']) ?>" data-programme="<?= htmlspecialchars($row['Programme']) ?>">
+        <tr data-id="<?= $row['StudentID'] ?>"
+            data-name="<?= htmlspecialchars($row['Name']) ?>"
+            data-programme="<?= htmlspecialchars($row['Programme']) ?>">
+
           <td><?= $row['StudentID'] ?></td>
           <td><?= htmlspecialchars($row['Name']) ?></td>
           <td><?= htmlspecialchars($row['Programme']) ?></td>
+
           <td>
             <button class="btn-edit" onclick="editRow(this)">Edit</button>
-            <form method="POST" action="student_actions.php" style="display:inline" onsubmit="return confirm('Delete this student?')">
+
+            <form method="POST" action="student_actions.php"
+                  style="display:inline"
+                  onsubmit="return confirm('Delete this student?')">
+
               <input type="hidden" name="action" value="delete"/>
               <input type="hidden" name="student_id" value="<?= $row['StudentID'] ?>"/>
+
               <button type="submit" class="btn-del">Delete</button>
             </form>
           </td>
+
         </tr>
         <?php endwhile; ?>
       </tbody>
@@ -100,73 +129,110 @@ $error   = $_GET['error'] ?? '';
   </div>
 </main>
 
-<!-- MODAL: Add / Edit Internship -->
+<!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
-    <div class="modal-title"><span id="modalHeading">Add Student</span><span class="badge-teal" id="modalBadge">New</span></div>
+
+    <div class="modal-title">
+      <span id="modalHeading">Add Student</span>
+      <span class="badge-teal" id="modalBadge">New</span>
+    </div>
+
     <form method="POST" action="student_actions.php">
+
       <input type="hidden" name="action" id="formAction" value="add"/>
-      <div class="form-group"><label>Student ID *</label><input type="number" name="student_id" id="fStudentId" placeholder="e.g. 20001" required/></div>
-      <div class="form-group"><label>Student Name *</label><input type="text" name="name" id="fStudentName" placeholder="Full name" required/></div>
-      <div class="form-group"><label>Programme *</label>
+
+      <!-- ID ONLY FOR EDIT -->
+      <input type="hidden" name="student_id" id="fStudentId"/>
+
+      <!-- NAME -->
+      <div class="form-group">
+        <label>Student Name *</label>
+        <input type="text" name="name" id="fStudentName" required/>
+      </div>
+
+      <!-- PROGRAMME -->
+      <div class="form-group">
+        <label>Programme *</label>
         <select name="programme" id="fProgramme" required>
           <option value="">Select programme</option>
-          <option>CS</option><option>Maths</option><option>Engineering</option><option>Finance</option>
+          <option>CS</option>
+          <option>Maths</option>
+          <option>Engineering</option>
+          <option>Finance</option>
         </select>
       </div>
-      <div class="modal-footer"><button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button><button type="submit" class="btn-save">Save Record</button></div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn-save">Save Record</button>
+      </div>
+
     </form>
   </div>
 </div>
 
 <script>
-  /* ── MODAL ── */
- 
-  function openModal() {
-    document.getElementById('formAction').value = 'add';       
-    document.getElementById('modalHeading').textContent = 'Add Student';
-    document.getElementById('modalBadge').textContent = 'New';
-    document.getElementById('fStudentId').value = '';
-    document.getElementById('fStudentId').readOnly = false;    
-    document.getElementById('fStudentName').value = '';
-    document.getElementById('fProgramme').value = '';
-    document.getElementById('modalOverlay').classList.add('open');
+function openModal() {
+  document.getElementById('formAction').value = 'add';
+  document.getElementById('modalHeading').textContent = 'Add Student';
+  document.getElementById('modalBadge').textContent = 'New';
+
+  document.getElementById('fStudentId').value = '';
+  document.getElementById('fStudentName').value = '';
+  document.getElementById('fProgramme').value = '';
+
+  document.getElementById('modalOverlay').classList.add('open');
 }
 
-  function editRow(btn) {
-    const tr = btn.closest('tr');
-    document.getElementById('formAction').value = 'edit';      
-    document.getElementById('modalHeading').textContent = 'Edit Student';
-    document.getElementById('modalBadge').textContent = 'Editing';
-    document.getElementById('fStudentId').value = tr.dataset.id;
-    document.getElementById('fStudentId').readOnly = true;       
-    document.getElementById('fStudentName').value = tr.dataset.name;
-    document.getElementById('fProgramme').value = tr.dataset.programme;
-    document.getElementById('modalOverlay').classList.add('open');
+function editRow(btn) {
+  const tr = btn.closest('tr');
+
+  document.getElementById('formAction').value = 'edit';
+  document.getElementById('modalHeading').textContent = 'Edit Student';
+  document.getElementById('modalBadge').textContent = 'Editing';
+
+  document.getElementById('fStudentId').value = tr.dataset.id;
+  document.getElementById('fStudentName').value = tr.dataset.name;
+  document.getElementById('fProgramme').value = tr.dataset.programme;
+
+  document.getElementById('modalOverlay').classList.add('open');
 }
 
-  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
-  function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('open');
+}
 
-  /* ── FILTER ── */
-  function filterTable() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    const prog = document.getElementById('programmeFilter').value;
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modalOverlay')) closeModal();
+}
 
-    let vis = 0;
+/* FILTER */
+function filterTable() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const prog = document.getElementById('programmeFilter').value;
 
-    document.querySelectorAll('#tableBody tr').forEach(row => {
-      const match = !q || row.dataset.name.toLowerCase().includes(q) || row.dataset.id.includes(q);
-      const progMatch = !prog || row.dataset.programme === prog;
-      const show = match && progMatch;
-      row.style.display = show ? '' : 'none';
-      if (show) vis++;
-    });
+  let vis = 0;
 
-    document.getElementById('recordCount').textContent =
-      vis + ' Record' + (vis !== 1 ? 's' : '');
-    }
+  document.querySelectorAll('#tableBody tr').forEach(row => {
+    const match =
+      !q ||
+      row.dataset.name.toLowerCase().includes(q) ||
+      row.dataset.id.includes(q);
 
+    const progMatch = !prog || row.dataset.programme === prog;
+
+    const show = match && progMatch;
+
+    row.style.display = show ? '' : 'none';
+
+    if (show) vis++;
+  });
+
+  document.getElementById('recordCount').textContent =
+    vis + ' Record' + (vis !== 1 ? 's' : '');
+}
 </script>
+
 </body>
 </html>
