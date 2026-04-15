@@ -81,10 +81,10 @@ $error   = $_GET['error'] ?? '';
         <?php while ($row = $supervisors->fetch_assoc()): ?>
         <tr data-id="<?= $row['SupervisorID'] ?>"
             data-name="<?= htmlspecialchars($row['Name']) ?>"
-            data-company="<?= htmlspecialchars($row['Department']) ?>">
+            data-company="<?= htmlspecialchars($row['Company']) ?>">
           <td><?= $row['SupervisorID'] ?></td>
           <td><?= htmlspecialchars($row['Name']) ?></td>
-          <td><?= htmlspecialchars($row['Department']) ?></td>
+          <td><?= htmlspecialchars($row['Company']) ?></td>
           <td><?= htmlspecialchars($row['Username'] ?? '-') ?></td>
           <td>
             <button class="btn-edit" onclick="editRow(this)">Edit</button>
