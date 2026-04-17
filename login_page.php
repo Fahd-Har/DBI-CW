@@ -309,28 +309,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       transition: opacity .2s;
     }
     .pw-toggle:hover { opacity: 1; }
-    .lf-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 26px;
-    }
-    .lf-remember {
-      display: flex; align-items: center; gap: 8px;
-      font-size: .83rem; color: var(--muted); cursor: pointer;
-    }
-    .lf-remember input[type="checkbox"] {
-      width: 16px; height: 16px;
-      accent-color: var(--teal);
-      cursor: pointer;
-    }
-    .lf-forgot {
-      font-size: .83rem;
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .lf-forgot:hover { text-decoration: underline; }
     .btn-login {
       width: 100%;
       padding: 13px;
@@ -462,15 +440,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
-      </div>
-
-      <!-- Remember + Forgot -->
-      <div class="lf-row">
-        <label class="lf-remember">
-          <input type="checkbox" id="rememberMe"/>
-          Remember me
-        </label>
-        <a href="#" class="lf-forgot">Forgot password?</a>
       </div>
 
       <!-- Submit -->

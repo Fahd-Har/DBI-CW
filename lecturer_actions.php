@@ -15,6 +15,14 @@ if ($action === 'add') {
         header("Location: User_Management_Lecturer.php?error=" . urlencode("All fields are required"));
         exit;
     }
+    $dup = $conn->prepare("SELECT LecturerID FROM lecturer WHERE LOWER(REPLACE(REPLACE(Name, ' ', ''), '.', '')) = LOWER(REPLACE(REPLACE(?, ' ', ''), '.', ''))
+");
+    $dup->bind_param("s", $name);
+    $dup->execute();
+    if ($dup->get_result()->num_rows > 0) {
+    header("Location: User_Management_Lecturer.php?error=" . urlencode("A lecturer with the name '$name' already exists"));
+    exit;
+    }
 
     $conn->begin_transaction();
     try {
@@ -30,10 +38,11 @@ if ($action === 'add') {
         $conn->commit();
         header("Location: User_Management_Lecturer.php?success=Lecturer added successfully");
     } catch (mysqli_sql_exception $e) {
-        $conn->rollback();
-        $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "Database error: " . $e->getMessage();
-        header("Location: User_Management_Lecturer.php?error=" . urlencode($msg));
-    }
+    $conn->rollback();
+    error_log("Lecturer action error: " . $e->getMessage());
+    $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "An unexpected error occurred. Please try again.";
+    header("Location: User_Management_Lecturer.php?error=" . urlencode($msg));
+}
     exit;
 }
 
@@ -47,6 +56,15 @@ if ($action === 'edit') {
     if ($id <= 0 || $name === '' || $dep === '' || $username === '') {
         header("Location: User_Management_Lecturer.php?error=" . urlencode("All fields except password are required"));
         exit;
+    }
+    $dup = $conn->prepare("SELECT LecturerID FROM lecturer WHERE LOWER(REPLACE(REPLACE(Name, ' ', ''), '.', '')) = LOWER(REPLACE(REPLACE(?, ' ', ''), '.', ''))
+      AND LecturerID <> ?
+");
+    $dup->bind_param("si", $name, $id);
+    $dup->execute();
+    if ($dup->get_result()->num_rows > 0) {
+    header("Location: User_Management_Lecturer.php?error=" . urlencode("Another lecturer with the name '$name' already exists"));
+    exit;
     }
 
     $conn->begin_transaction();
@@ -74,9 +92,10 @@ if ($action === 'edit') {
         $conn->commit();
         header("Location: User_Management_Lecturer.php?success=Lecturer updated successfully");
     } catch (mysqli_sql_exception $e) {
-        $conn->rollback();
-        $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "Database error: " . $e->getMessage();
-        header("Location: User_Management_Lecturer.php?error=" . urlencode($msg));
+    $conn->rollback();
+    error_log("Lecturer action error: " . $e->getMessage());
+    $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "An unexpected error occurred. Please try again.";
+    header("Location: User_Management_Lecturer.php?error=" . urlencode($msg));
     }
     exit;
 }
@@ -129,8 +148,9 @@ if ($action === 'delete') {
         $conn->commit();
         header("Location: User_Management_Lecturer.php?success=Lecturer deleted");
     } catch (mysqli_sql_exception $e) {
-        $conn->rollback();
-        header("Location: User_Management_Lecturer.php?error=" . urlencode("Cannot delete lecturer: " . $e->getMessage()));
+    $conn->rollback();
+    error_log("Lecturer delete error: " . $e->getMessage());
+    header("Location: User_Management_Lecturer.php?error=" . urlencode("Cannot delete lecturer. Please try again."));
     }
     exit;
 }
