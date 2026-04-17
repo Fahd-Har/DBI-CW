@@ -16,6 +16,22 @@ if ($action === 'add') {
         exit;
     }
 
+    $check = $conn->prepare("SELECT UserID FROM users WHERE Username = ?");
+    $check->bind_param("s", $username);
+    $check->execute();
+    if ($check->get_result()->num_rows > 0) {
+        header("Location: User_Management_IndustrySupervisor.php?error=Username already exists");
+        exit;
+    }
+    $dup = $conn->prepare("SELECT SupervisorID FROM supervisor WHERE LOWER(REPLACE(REPLACE(Name, ' ', ''), '.', '')) = LOWER(REPLACE(REPLACE(?, ' ', ''), '.', ''))
+");
+    $dup->bind_param("s", $name);
+    $dup->execute();
+    if ($dup->get_result()->num_rows > 0) {
+    header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("A supervisor with the name '$name' already exists"));
+    exit;
+    }
+    
     $conn->begin_transaction();
     try {
         $stmt = $conn->prepare("INSERT INTO users (Username, Password, Role) VALUES (?, ?, 'supervisor')");
@@ -23,16 +39,17 @@ if ($action === 'add') {
         $stmt->execute();
         $userId = $conn->insert_id;
 
-        $stmt2 = $conn->prepare("INSERT INTO supervisor (UserID, Name, Department) VALUES (?, ?, ?)");
+        $stmt2 = $conn->prepare("INSERT INTO supervisor (UserID, Name, Company) VALUES (?, ?, ?)");
         $stmt2->bind_param("iss", $userId, $name, $company);
         $stmt2->execute();
 
         $conn->commit();
         header("Location: User_Management_IndustrySupervisor.php?success=Supervisor added successfully");
     } catch (mysqli_sql_exception $e) {
-        $conn->rollback();
-        $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "Database error: " . $e->getMessage();
-        header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode($msg));
+    $conn->rollback();
+    error_log("Supervisor action error: " . $e->getMessage());
+    $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "An unexpected error occurred. Please try again.";
+    header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode($msg));
     }
     exit;
 }
@@ -48,6 +65,15 @@ if ($action === 'edit') {
         header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("All fields except password are required"));
         exit;
     }
+    $dup = $conn->prepare("SELECT SupervisorID FROM supervisor WHERE LOWER(REPLACE(REPLACE(Name, ' ', ''), '.', '')) = LOWER(REPLACE(REPLACE(?, ' ', ''), '.', ''))
+      AND SupervisorID <> ?
+");
+    $dup->bind_param("si", $name, $id);
+    $dup->execute();
+    if ($dup->get_result()->num_rows > 0) {
+    header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("Another supervisor with the name '$name' already exists"));
+    exit;
+    }
 
     $conn->begin_transaction();
     try {
@@ -56,7 +82,7 @@ if ($action === 'edit') {
         $q->execute();
         $userId = $q->get_result()->fetch_assoc()['UserID'] ?? null;
 
-        $stmt = $conn->prepare("UPDATE supervisor SET Name = ?, Department = ? WHERE SupervisorID = ?");
+        $stmt = $conn->prepare("UPDATE supervisor SET Name = ?, Company = ? WHERE SupervisorID = ?");
         $stmt->bind_param("ssi", $name, $company, $id);
         $stmt->execute();
 
@@ -74,9 +100,10 @@ if ($action === 'edit') {
         $conn->commit();
         header("Location: User_Management_IndustrySupervisor.php?success=Supervisor updated successfully");
     } catch (mysqli_sql_exception $e) {
-        $conn->rollback();
-        $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "Database error: " . $e->getMessage();
-        header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode($msg));
+    $conn->rollback();
+    error_log("Supervisor action error: " . $e->getMessage());
+    $msg = ($e->getCode() == 1062) ? "Username '$username' is already taken." : "An unexpected error occurred. Please try again.";
+    header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode($msg));
     }
     exit;
 }
@@ -129,8 +156,9 @@ if ($action === 'delete') {
         $conn->commit();
         header("Location: User_Management_IndustrySupervisor.php?success=Supervisor deleted");
     } catch (mysqli_sql_exception $e) {
-        $conn->rollback();
-        header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("Cannot delete supervisor: " . $e->getMessage()));
+    $conn->rollback();
+    error_log("Supervisor delete error: " . $e->getMessage());
+    header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("Cannot delete supervisor. Please try again."));
     }
     exit;
 }
