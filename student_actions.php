@@ -14,13 +14,15 @@ if ($action === 'add') {
         exit;
     }
 
-    $check = $conn->prepare("SELECT StudentID FROM student WHERE LOWER(Name) = LOWER(?)");
+    $check = $conn->prepare("
+        SELECT StudentID FROM student
+        WHERE LOWER(REPLACE(REPLACE(Name, ' ', ''), '.', '')) = LOWER(REPLACE(REPLACE(?, ' ', ''), '.', ''))
+    ");
     $check->bind_param("s", $name);
     $check->execute();
-    $res = $check->get_result();
 
-    if ($res->num_rows > 0) {
-        header("Location: User_Management_Student.php?error=" . urlencode("Student name already exists"));
+    if ($check->get_result()->num_rows > 0) {
+        header("Location: User_Management_Student.php?error=" . urlencode("A student with a similar name to '$name' already exists"));
         exit;
     }
 
@@ -30,12 +32,9 @@ if ($action === 'add') {
         $stmt->execute();
         header("Location: User_Management_Student.php?success=Student added successfully");
     } catch (mysqli_sql_exception $e) {
-        if ($e->getCode() == 1062) {
-            $error_msg = "A student with ID $id already exists!";
-        } else {
-            $error_msg = "Database error: " . $e->getMessage();
-        }
-        header("Location: User_Management_Student.php?error=" . urlencode($error_msg));
+        error_log("Student add error: " . $e->getMessage());
+        $msg = ($e->getCode() == 1062) ? "Student already exists." : "An unexpected error occurred. Please try again.";
+        header("Location: User_Management_Student.php?error=" . urlencode($msg));
     }
     exit;
 }
@@ -50,13 +49,26 @@ if ($action === 'edit') {
         exit;
     }
 
+    $dup = $conn->prepare("
+        SELECT StudentID FROM student
+        WHERE LOWER(REPLACE(REPLACE(Name, ' ', ''), '.', '')) = LOWER(REPLACE(REPLACE(?, ' ', ''), '.', ''))
+          AND StudentID <> ?
+    ");
+    $dup->bind_param("si", $name, $id);
+    $dup->execute();
+    if ($dup->get_result()->num_rows > 0) {
+        header("Location: User_Management_Student.php?error=" . urlencode("Another student with a similar name to '$name' already exists"));
+        exit;
+    }
+
     try {
         $stmt = $conn->prepare("UPDATE student SET Name = ?, Programme = ? WHERE StudentID = ?");
         $stmt->bind_param("ssi", $name, $prog, $id);
         $stmt->execute();
         header("Location: User_Management_Student.php?success=Student updated successfully");
     } catch (mysqli_sql_exception $e) {
-        header("Location: User_Management_Student.php?error=" . urlencode("Database error: " . $e->getMessage()));
+        error_log("Student edit error: " . $e->getMessage());
+        header("Location: User_Management_Student.php?error=" . urlencode("An unexpected error occurred. Please try again."));
     }
     exit;
 }
@@ -70,7 +82,6 @@ if ($action === 'delete') {
 
     $conn->begin_transaction();
     try {
-        // 1. delete grade_classification rows for this student's assessments
         $g = $conn->prepare("
             DELETE gc FROM grade_classification gc
             JOIN assessment a ON a.AssessmentID = gc.AssessmentID
@@ -80,7 +91,6 @@ if ($action === 'delete') {
         $g->bind_param("i", $id);
         $g->execute();
 
-        // 2. delete assessment rows for this student's internships
         $a = $conn->prepare("
             DELETE a FROM assessment a
             JOIN internship i ON i.InternshipID = a.InternshipID
@@ -89,12 +99,10 @@ if ($action === 'delete') {
         $a->bind_param("i", $id);
         $a->execute();
 
-        // 3. delete internships
         $d = $conn->prepare("DELETE FROM internship WHERE StudentID = ?");
         $d->bind_param("i", $id);
         $d->execute();
 
-        // 4. finally delete the student
         $stmt = $conn->prepare("DELETE FROM student WHERE StudentID = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -103,7 +111,8 @@ if ($action === 'delete') {
         header("Location: User_Management_Student.php?success=Student deleted");
     } catch (mysqli_sql_exception $e) {
         $conn->rollback();
-        header("Location: User_Management_Student.php?error=" . urlencode("Cannot delete student: " . $e->getMessage()));
+        error_log("Student delete error: " . $e->getMessage());
+        header("Location: User_Management_Student.php?error=" . urlencode("Cannot delete student. Please try again."));
     }
     exit;
 }
