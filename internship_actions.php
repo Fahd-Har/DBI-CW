@@ -3,15 +3,21 @@ require_once 'db_connect.php';
 require_once 'auth_check.php';
 requireRole('admin');
 
-function getOrCreateCompany($conn, $name) {
+function getOrCreateCompany($conn, $name, $location, $sector) {
     $stmt = $conn->prepare("SELECT CompanyID FROM company WHERE LOWER(CompanyName) = LOWER(?) LIMIT 1");
     $stmt->bind_param("s", $name);
     $stmt->execute();
     $res = $stmt->get_result()->fetch_assoc();
-    if ($res) return $res['CompanyID'];
 
-    $ins = $conn->prepare("INSERT INTO company (CompanyName) VALUES (?)");
-    $ins->bind_param("s", $name);
+    if ($res) {
+        $upd = $conn->prepare("UPDATE company SET Location = ?, Sector = ? WHERE CompanyID = ?");
+        $upd->bind_param("ssi", $location, $sector, $res['CompanyID']);
+        $upd->execute();
+        return $res['CompanyID'];
+    }
+
+    $ins = $conn->prepare("INSERT INTO company (CompanyName, Location, Sector) VALUES (?, ?, ?)");
+    $ins->bind_param("sss", $name, $location, $sector);
     $ins->execute();
     return $conn->insert_id;
 }
@@ -36,10 +42,14 @@ if ($action === 'add') {
     $lecturerId   = intval($_POST['lecturer_id'] ?? 0);
     $supervisorId = intval($_POST['supervisor_id'] ?? 0);
     $company      = trim($_POST['company'] ?? '');
+    $location     = trim($_POST['location'] ?? '');
+    $sector       = trim($_POST['sector'] ?? '');
     $start        = $_POST['start_date'] ?? '';
     $end          = $_POST['end_date'] ?? '';
 
-    if ($studentId <= 0 || $lecturerId <= 0 || $supervisorId <= 0 || $company === '' || $start === '' || $end === '') {
+    if ($studentId <= 0 || $lecturerId <= 0 || $supervisorId <= 0
+        || $company === '' || $location === '' || $sector === ''
+        || $start === '' || $end === '') {
         header("Location: Internship_management.php?error=" . urlencode("All fields are required"));
         exit;
     }
@@ -52,7 +62,7 @@ if ($action === 'add') {
 
     $conn->begin_transaction();
     try {
-        $companyId = getOrCreateCompany($conn, $company);
+        $companyId = getOrCreateCompany($conn, $company, $location, $sector);
 
         $stmt = $conn->prepare("
           INSERT INTO internship (StudentID, LecturerID, SupervisorID, CompanyID, Duration, Start_Date, End_Date)
@@ -76,10 +86,14 @@ if ($action === 'edit') {
     $lecturerId   = intval($_POST['lecturer_id'] ?? 0);
     $supervisorId = intval($_POST['supervisor_id'] ?? 0);
     $company      = trim($_POST['company'] ?? '');
+    $location     = trim($_POST['location'] ?? '');
+    $sector       = trim($_POST['sector'] ?? '');
     $start        = $_POST['start_date'] ?? '';
     $end          = $_POST['end_date'] ?? '';
 
-    if ($id <= 0 || $lecturerId <= 0 || $supervisorId <= 0 || $company === '' || $start === '' || $end === '') {
+    if ($id <= 0 || $lecturerId <= 0 || $supervisorId <= 0
+        || $company === '' || $location === '' || $sector === ''
+        || $start === '' || $end === '') {
         header("Location: Internship_management.php?error=" . urlencode("All fields are required"));
         exit;
     }
@@ -92,7 +106,7 @@ if ($action === 'edit') {
 
     $conn->begin_transaction();
     try {
-        $companyId = getOrCreateCompany($conn, $company);
+        $companyId = getOrCreateCompany($conn, $company, $location, $sector);
 
         $stmt = $conn->prepare("
           UPDATE internship

@@ -5,7 +5,7 @@ requireRole('admin');
 
 $internships = $conn->query("
   SELECT i.InternshipID, i.StudentID, s.Name AS StudentName, s.Programme,
-         c.CompanyName, c.CompanyID,
+         c.CompanyName, c.CompanyID, c.Location AS CompanyLocation, c.Sector AS CompanySector,
          l.Name AS LecturerName, i.LecturerID,
          sv.Name AS SupervisorName, i.SupervisorID,
          i.Start_Date, i.End_Date
@@ -115,6 +115,8 @@ function statusFromDates($start, $end) {
             data-name="<?= htmlspecialchars($row['StudentName']) ?>"
             data-status="<?= $status ?>"
             data-company="<?= htmlspecialchars($row['CompanyName'] ?? '') ?>"
+            data-location="<?= htmlspecialchars($row['CompanyLocation'] ?? '') ?>"
+            data-sector="<?= htmlspecialchars($row['CompanySector'] ?? '') ?>"
             data-lecturer="<?= $row['LecturerID'] ?>"
             data-supervisor="<?= $row['SupervisorID'] ?>"
             data-start="<?= $row['Start_Date'] ?>"
@@ -195,7 +197,16 @@ function statusFromDates($start, $end) {
           <input type="text" name="company" id="fCompany" placeholder="e.g. Maybank" required/>
         </div>
       </div>
-
+      <div class="form-row">
+        <div class="form-group">
+          <label>Company Location *</label>
+          <input type="text" name="location" id="fLocation" placeholder="e.g. Kuala Lumpur" required/>
+        </div>
+        <div class="form-group">
+          <label>Company Sector *</label>
+          <input type="text" name="sector" id="fSector" placeholder="e.g. Finance" required/>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label>Start Date *</label>
@@ -224,13 +235,14 @@ function statusFromDates($start, $end) {
     document.getElementById('fStudentId').value = '';
     document.getElementById('fStudentId').disabled = false;
 
-    // FIX: Remove hidden input so it doesn't interfere when adding
     const hidden = document.getElementById('fStudentIdHidden');
     if (hidden) hidden.remove();
 
     document.getElementById('fLecturer').value = '';
     document.getElementById('fSupervisor').value = '';
     document.getElementById('fCompany').value = '';
+    document.getElementById('fLocation').value = '';
+    document.getElementById('fSector').value = '';
     document.getElementById('fStartDate').value = '';
     document.getElementById('fEndDate').value = '';
     document.getElementById('modalOverlay').classList.add('open');
@@ -245,7 +257,6 @@ function statusFromDates($start, $end) {
     document.getElementById('fStudentId').value = tr.dataset.studentId;
     document.getElementById('fStudentId').disabled = true;
 
-    // FIX: Add a hidden input so student_id still submits when select is disabled
     let hiddenInput = document.getElementById('fStudentIdHidden');
     if (!hiddenInput) {
         hiddenInput = document.createElement('input');
@@ -259,6 +270,8 @@ function statusFromDates($start, $end) {
     document.getElementById('fLecturer').value = tr.dataset.lecturer;
     document.getElementById('fSupervisor').value = tr.dataset.supervisor;
     document.getElementById('fCompany').value = tr.dataset.company;
+    document.getElementById('fLocation').value = tr.dataset.location;
+    document.getElementById('fSector').value = tr.dataset.sector;
     document.getElementById('fStartDate').value = tr.dataset.start;
     document.getElementById('fEndDate').value = tr.dataset.end;
     document.getElementById('modalOverlay').classList.add('open');
