@@ -3,26 +3,25 @@ require_once 'db_connect.php';
 require_once 'auth_check.php';
 requireRole('admin');
 
-/**
- * Look up a company by name, inserting it if it doesn't exist.
- * Returns the CompanyID.
- */
-function getOrCreateCompany($conn, $name) {
-    $stmt = $conn->prepare("SELECT CompanyID FROM company WHERE CompanyName = ? LIMIT 1");
+function getOrCreateCompany($conn, $name, $location, $sector) {
+    $stmt = $conn->prepare("SELECT CompanyID FROM company WHERE LOWER(CompanyName) = LOWER(?) LIMIT 1");
     $stmt->bind_param("s", $name);
     $stmt->execute();
     $res = $stmt->get_result()->fetch_assoc();
-    if ($res) return $res['CompanyID'];
 
-    $ins = $conn->prepare("INSERT INTO company (CompanyName) VALUES (?)");
-    $ins->bind_param("s", $name);
+    if ($res) {
+        $upd = $conn->prepare("UPDATE company SET Location = ?, Sector = ? WHERE CompanyID = ?");
+        $upd->bind_param("ssi", $location, $sector, $res['CompanyID']);
+        $upd->execute();
+        return $res['CompanyID'];
+    }
+
+    $ins = $conn->prepare("INSERT INTO company (CompanyName, Location, Sector) VALUES (?, ?, ?)");
+    $ins->bind_param("sss", $name, $location, $sector);
     $ins->execute();
     return $conn->insert_id;
 }
 
-/**
- * Calculate duration in months between two Y-m-d dates.
- */
 function monthsBetween($startStr, $endStr) {
     try {
         $d1 = new DateTime($startStr);
@@ -43,10 +42,14 @@ if ($action === 'add') {
     $lecturerId   = intval($_POST['lecturer_id'] ?? 0);
     $supervisorId = intval($_POST['supervisor_id'] ?? 0);
     $company      = trim($_POST['company'] ?? '');
+    $location     = trim($_POST['location'] ?? '');
+    $sector       = trim($_POST['sector'] ?? '');
     $start        = $_POST['start_date'] ?? '';
     $end          = $_POST['end_date'] ?? '';
 
-    if ($studentId <= 0 || $lecturerId <= 0 || $supervisorId <= 0 || $company === '' || $start === '' || $end === '') {
+    if ($studentId <= 0 || $lecturerId <= 0 || $supervisorId <= 0
+        || $company === '' || $location === '' || $sector === ''
+        || $start === '' || $end === '') {
         header("Location: Internship_management.php?error=" . urlencode("All fields are required"));
         exit;
     }
@@ -57,8 +60,9 @@ if ($action === 'add') {
 
     $duration = monthsBetween($start, $end);
 
+    $conn->begin_transaction();
     try {
-        $companyId = getOrCreateCompany($conn, $company);
+        $companyId = getOrCreateCompany($conn, $company, $location, $sector);
 
         $stmt = $conn->prepare("
           INSERT INTO internship (StudentID, LecturerID, SupervisorID, CompanyID, Duration, Start_Date, End_Date)
@@ -66,9 +70,13 @@ if ($action === 'add') {
         ");
         $stmt->bind_param("iiiiiss", $studentId, $lecturerId, $supervisorId, $companyId, $duration, $start, $end);
         $stmt->execute();
+
+        $conn->commit();
         header("Location: Internship_management.php?success=Internship added successfully");
     } catch (mysqli_sql_exception $e) {
-        header("Location: Internship_management.php?error=" . urlencode("Database error: " . $e->getMessage()));
+        $conn->rollback();
+        error_log("Internship add error: " . $e->getMessage());
+        header("Location: Internship_management.php?error=" . urlencode("An unexpected error occurred. Please try again."));
     }
     exit;
 }
@@ -78,10 +86,14 @@ if ($action === 'edit') {
     $lecturerId   = intval($_POST['lecturer_id'] ?? 0);
     $supervisorId = intval($_POST['supervisor_id'] ?? 0);
     $company      = trim($_POST['company'] ?? '');
+    $location     = trim($_POST['location'] ?? '');
+    $sector       = trim($_POST['sector'] ?? '');
     $start        = $_POST['start_date'] ?? '';
     $end          = $_POST['end_date'] ?? '';
 
-    if ($id <= 0 || $lecturerId <= 0 || $supervisorId <= 0 || $company === '' || $start === '' || $end === '') {
+    if ($id <= 0 || $lecturerId <= 0 || $supervisorId <= 0
+        || $company === '' || $location === '' || $sector === ''
+        || $start === '' || $end === '') {
         header("Location: Internship_management.php?error=" . urlencode("All fields are required"));
         exit;
     }
@@ -92,8 +104,9 @@ if ($action === 'edit') {
 
     $duration = monthsBetween($start, $end);
 
+    $conn->begin_transaction();
     try {
-        $companyId = getOrCreateCompany($conn, $company);
+        $companyId = getOrCreateCompany($conn, $company, $location, $sector);
 
         $stmt = $conn->prepare("
           UPDATE internship
@@ -102,9 +115,13 @@ if ($action === 'edit') {
         ");
         $stmt->bind_param("iiiissi", $lecturerId, $supervisorId, $companyId, $duration, $start, $end, $id);
         $stmt->execute();
+
+        $conn->commit();
         header("Location: Internship_management.php?success=Internship updated successfully");
     } catch (mysqli_sql_exception $e) {
-        header("Location: Internship_management.php?error=" . urlencode("Database error: " . $e->getMessage()));
+        $conn->rollback();
+        error_log("Internship edit error: " . $e->getMessage());
+        header("Location: Internship_management.php?error=" . urlencode("An unexpected error occurred. Please try again."));
     }
     exit;
 }
@@ -118,7 +135,6 @@ if ($action === 'delete') {
 
     $conn->begin_transaction();
     try {
-        // 1. delete grade_classification rows for assessments of this internship
         $g = $conn->prepare("
             DELETE gc FROM grade_classification gc
             JOIN assessment a ON a.AssessmentID = gc.AssessmentID
@@ -127,12 +143,10 @@ if ($action === 'delete') {
         $g->bind_param("i", $id);
         $g->execute();
 
-        // 2. delete the assessments themselves
         $d1 = $conn->prepare("DELETE FROM assessment WHERE InternshipID = ?");
         $d1->bind_param("i", $id);
         $d1->execute();
 
-        // 3. delete the internship
         $stmt = $conn->prepare("DELETE FROM internship WHERE InternshipID = ?");
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -141,7 +155,8 @@ if ($action === 'delete') {
         header("Location: Internship_management.php?success=Internship deleted");
     } catch (mysqli_sql_exception $e) {
         $conn->rollback();
-        header("Location: Internship_management.php?error=" . urlencode("Cannot delete internship: " . $e->getMessage()));
+        error_log("Internship delete error: " . $e->getMessage());
+        header("Location: Internship_management.php?error=" . urlencode("Cannot delete internship. Please try again."));
     }
     exit;
 }
