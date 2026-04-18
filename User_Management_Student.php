@@ -20,7 +20,9 @@ $error   = $_GET['error'] ?? '';
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <img src="nottingham-university-logo.png" alt="UNM Logo" class="logo-img"/>
+    <div class="logo-bg">
+      <img src="nottingham-university-logo.png" alt="UNM Logo" class="logo-img"/>
+    </div>
     UNM
   </div>
   <div class="sidebar-sub">Internship Result Management System</div>

@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       flex-shrink: 0;
       box-shadow: 0 2px 8px rgba(0,0,0,.18);
     }
-    .logo-bg img { width: 52px; height: 52px; object-fit: contain; display: block; }
+    .logo-bg img { width: 72px; height: 72px; object-fit: contain; display: block; }
     .left-logo-text .unm {
       font-family: 'Sora', sans-serif;
       font-size: 1.4rem;

@@ -61,10 +61,24 @@ body {
   margin-bottom: 8px;
 }
 
-.sidebar-logo .logo-img {
-  width: 100px;
-  height: 100px;
+/* ── GLOBAL LOGO BOX – identical to login page ── */
+.logo-bg {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+}
+
+.logo-bg img,
+.logo-bg .logo-img {
+  width: 72px;
+  height: 72px;
   object-fit: contain;
+  display: block;
 }
 
 .sidebar-sub {
