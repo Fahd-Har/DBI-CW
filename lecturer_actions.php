@@ -23,6 +23,13 @@ if ($action === 'add') {
     header("Location: User_Management_Lecturer.php?error=" . urlencode("A lecturer with the name '$name' already exists"));
     exit;
     }
+    $userChk = $conn->prepare("SELECT UserID FROM users WHERE Username = ?");
+    $userChk->bind_param("s", $username);
+    $userChk->execute();
+    if ($userChk->get_result()->num_rows > 0) {
+    header("Location: User_Management_Lecturer.php?error=" . urlencode("Username '$username' is already taken"));
+    exit;
+}
 
     $conn->begin_transaction();
     try {
@@ -66,7 +73,18 @@ if ($action === 'edit') {
     header("Location: User_Management_Lecturer.php?error=" . urlencode("Another lecturer with the name '$name' already exists"));
     exit;
     }
+    $curQ = $conn->prepare("SELECT UserID FROM lecturer WHERE LecturerID = ?");
+    $curQ->bind_param("i", $id);
+    $curQ->execute();
+    $currentUserId = (int)($curQ->get_result()->fetch_assoc()['UserID'] ?? 0);
 
+    $userChk = $conn->prepare("SELECT UserID FROM users WHERE Username = ? AND UserID <> ?");
+    $userChk->bind_param("si", $username, $currentUserId);
+    $userChk->execute();
+    if ($userChk->get_result()->num_rows > 0) {
+    header("Location: User_Management_Lecturer.php?error=" . urlencode("Username '$username' is already taken"));
+    exit;
+}
     $conn->begin_transaction();
     try {
         $q = $conn->prepare("SELECT UserID FROM lecturer WHERE LecturerID = ?");

@@ -74,6 +74,18 @@ if ($action === 'edit') {
     header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("Another supervisor with the name '$name' already exists"));
     exit;
     }
+    $curQ = $conn->prepare("SELECT UserID FROM supervisor WHERE SupervisorID = ?");
+    $curQ->bind_param("i", $id);
+    $curQ->execute();
+    $currentUserId = (int)($curQ->get_result()->fetch_assoc()['UserID'] ?? 0);
+
+    $userChk = $conn->prepare("SELECT UserID FROM users WHERE Username = ? AND UserID <> ?");
+    $userChk->bind_param("si", $username, $currentUserId);
+    $userChk->execute();
+    if ($userChk->get_result()->num_rows > 0) {
+    header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("Username '$username' is already taken"));
+    exit;
+}
 
     $conn->begin_transaction();
     try {

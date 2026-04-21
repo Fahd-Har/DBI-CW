@@ -1,6 +1,7 @@
 <?php
 require_once 'db_connect.php';
 require_once 'auth_check.php';
+require_once 'grade_helper.php';
 requireRole('lecturer');
 
 $lecturerId   = intval($_SESSION['assessor_id']);
@@ -57,6 +58,7 @@ try {
             $task, $safety, $knowledge, $report, $language, $learning, $project, $time, $total, $comments);
     }
     $stmt->execute();
+    classifyIfComplete($conn, $internshipId);
 
     header("Location: LecturerStudentList.php?success=Marks saved successfully");
 } catch (mysqli_sql_exception $e) {
