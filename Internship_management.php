@@ -3,9 +3,10 @@ require_once 'db_connect.php';
 require_once 'auth_check.php';
 requireRole('admin');
 
+// 1. Fetch Internship Records
 $internships = $conn->query("
   SELECT i.InternshipID, i.StudentID, s.Name AS StudentName, s.Programme,
-         c.CompanyName, c.CompanyID, c.Location AS CompanyLocation, c.Sector AS CompanySector,
+         c.CompanyName, c.CompanyID,
          l.Name AS LecturerName, i.LecturerID,
          sv.Name AS SupervisorName, i.SupervisorID,
          i.Start_Date, i.End_Date
@@ -17,9 +18,11 @@ $internships = $conn->query("
   ORDER BY i.InternshipID DESC
 ");
 
-$students   = $conn->query("SELECT StudentID, Name FROM student ORDER BY Name");
-$lecturers  = $conn->query("SELECT LecturerID, Name FROM lecturer ORDER BY Name");
-$supervisors= $conn->query("SELECT SupervisorID, Name FROM supervisor ORDER BY Name");
+// 2. Fetch data for Filter and Modal Dropdowns
+$all_companies = $conn->query("SELECT CompanyID, CompanyName FROM company ORDER BY CompanyName");
+$students    = $conn->query("SELECT StudentID, Name FROM student ORDER BY Name");
+$lecturers   = $conn->query("SELECT LecturerID, Name FROM lecturer ORDER BY Name");
+$supervisors = $conn->query("SELECT SupervisorID, Name FROM supervisor ORDER BY Name");
 
 $success = $_GET['success'] ?? '';
 $error   = $_GET['error'] ?? '';
@@ -79,14 +82,22 @@ function statusFromDates($start, $end) {
   <?php endif; ?>
 
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍  Search by student ID or name…" oninput="filterTable()"/>
+    <input type="text" id="searchInput" placeholder="🔍  Search Student ID or Name..." oninput="filterTable()"/>
+    
+    <select id="companyFilter" onchange="filterTable()">
+      <option value="">All Companies</option>
+      <?php $all_companies->data_seek(0); while ($c = $all_companies->fetch_assoc()): ?>
+        <option value="<?= htmlspecialchars($c['CompanyName']) ?>"><?= htmlspecialchars($c['CompanyName']) ?></option>
+      <?php endwhile; ?>
+    </select>
+
     <select id="statusFilter" onchange="filterTable()">
       <option value="">All Statuses</option>
       <option value="Active">Active</option>
       <option value="Pending">Pending</option>
       <option value="Completed">Completed</option>
     </select>
-    <button class="btn-search" onclick="filterTable()">Search</button>
+    <button class="btn-search" onclick="filterTable()">Filter</button>
   </div>
 
   <div class="table-card">
@@ -117,8 +128,6 @@ function statusFromDates($start, $end) {
             data-name="<?= htmlspecialchars($row['StudentName']) ?>"
             data-status="<?= $status ?>"
             data-company="<?= htmlspecialchars($row['CompanyName'] ?? '') ?>"
-            data-location="<?= htmlspecialchars($row['CompanyLocation'] ?? '') ?>"
-            data-sector="<?= htmlspecialchars($row['CompanySector'] ?? '') ?>"
             data-lecturer="<?= $row['LecturerID'] ?>"
             data-supervisor="<?= $row['SupervisorID'] ?>"
             data-start="<?= $row['Start_Date'] ?>"
@@ -168,7 +177,7 @@ function statusFromDates($start, $end) {
           <label>Student *</label>
           <select name="student_id" id="fStudentId" required>
             <option value="">Select student</option>
-            <?php while ($s = $students->fetch_assoc()): ?>
+            <?php $students->data_seek(0); while ($s = $students->fetch_assoc()): ?>
               <option value="<?= $s['StudentID'] ?>"><?= $s['StudentID'] ?> – <?= htmlspecialchars($s['Name']) ?></option>
             <?php endwhile; ?>
           </select>
@@ -177,7 +186,7 @@ function statusFromDates($start, $end) {
           <label>Lecturer *</label>
           <select name="lecturer_id" id="fLecturer" required>
             <option value="">Select lecturer</option>
-            <?php while ($l = $lecturers->fetch_assoc()): ?>
+            <?php $lecturers->data_seek(0); while ($l = $lecturers->fetch_assoc()): ?>
               <option value="<?= $l['LecturerID'] ?>"><?= htmlspecialchars($l['Name']) ?></option>
             <?php endwhile; ?>
           </select>
@@ -189,26 +198,22 @@ function statusFromDates($start, $end) {
           <label>Industry Supervisor *</label>
           <select name="supervisor_id" id="fSupervisor" required>
             <option value="">Select supervisor</option>
-            <?php while ($sv = $supervisors->fetch_assoc()): ?>
+            <?php $supervisors->data_seek(0); while ($sv = $supervisors->fetch_assoc()): ?>
               <option value="<?= $sv['SupervisorID'] ?>"><?= htmlspecialchars($sv['Name']) ?></option>
             <?php endwhile; ?>
           </select>
         </div>
         <div class="form-group">
-          <label>Company Name *</label>
-          <input type="text" name="company" id="fCompany" placeholder="e.g. Maybank" required/>
+          <label>Company *</label>
+          <select name="company_id" id="fCompanySelect" required>
+            <option value="">Select Company</option>
+            <?php $all_companies->data_seek(0); while ($c = $all_companies->fetch_assoc()): ?>
+              <option value="<?= $c['CompanyID'] ?>"><?= htmlspecialchars($c['CompanyName']) ?></option>
+            <?php endwhile; ?>
+          </select>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Company Location *</label>
-          <input type="text" name="location" id="fLocation" placeholder="e.g. Kuala Lumpur" required/>
-        </div>
-        <div class="form-group">
-          <label>Company Sector *</label>
-          <input type="text" name="sector" id="fSector" placeholder="e.g. Finance" required/>
-        </div>
-      </div>
+
       <div class="form-row">
         <div class="form-group">
           <label>Start Date *</label>
@@ -236,15 +241,13 @@ function statusFromDates($start, $end) {
     document.getElementById('modalBadge').textContent = 'New';
     document.getElementById('fStudentId').value = '';
     document.getElementById('fStudentId').disabled = false;
-
+    
     const hidden = document.getElementById('fStudentIdHidden');
     if (hidden) hidden.remove();
 
     document.getElementById('fLecturer').value = '';
     document.getElementById('fSupervisor').value = '';
-    document.getElementById('fCompany').value = '';
-    document.getElementById('fLocation').value = '';
-    document.getElementById('fSector').value = '';
+    document.getElementById('fCompanySelect').value = '';
     document.getElementById('fStartDate').value = '';
     document.getElementById('fEndDate').value = '';
     document.getElementById('modalOverlay').classList.add('open');
@@ -271,9 +274,15 @@ function statusFromDates($start, $end) {
 
     document.getElementById('fLecturer').value = tr.dataset.lecturer;
     document.getElementById('fSupervisor').value = tr.dataset.supervisor;
-    document.getElementById('fCompany').value = tr.dataset.company;
-    document.getElementById('fLocation').value = tr.dataset.location;
-    document.getElementById('fSector').value = tr.dataset.sector;
+    
+    const companySelect = document.getElementById('fCompanySelect');
+    for (let i = 0; i < companySelect.options.length; i++) {
+        if (companySelect.options[i].text === tr.dataset.company) {
+            companySelect.selectedIndex = i;
+            break;
+        }
+    }
+
     document.getElementById('fStartDate').value = tr.dataset.start;
     document.getElementById('fEndDate').value = tr.dataset.end;
     document.getElementById('modalOverlay').classList.add('open');
@@ -283,19 +292,27 @@ function statusFromDates($start, $end) {
   function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
 
   function filterTable() {
-    const q  = document.getElementById('searchInput').value.toLowerCase();
-    const st = document.getElementById('statusFilter').value;
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const selectedCompany = document.getElementById('companyFilter').value.toLowerCase();
+    const selectedStatus  = document.getElementById('statusFilter').value;
     let vis = 0;
+    
     document.querySelectorAll('#tableBody tr').forEach(row => {
-      const matchQ  = !q  || row.dataset.name.toLowerCase().includes(q) || row.dataset.studentId.includes(q);
-      const matchSt = !st || row.dataset.status === st;
-      const show = matchQ && matchSt;
+      const rowName = row.dataset.name.toLowerCase();
+      const rowID = row.dataset.studentId;
+      const rowCompany = row.dataset.company.toLowerCase();
+      const rowStatus  = row.dataset.status;
+
+      const matchQ = !q || rowName.includes(q) || rowID.includes(q);
+      const matchCompany = !selectedCompany || rowCompany === selectedCompany;
+      const matchStatus  = !selectedStatus  || rowStatus === selectedStatus;
+      
+      const show = matchQ && matchCompany && matchStatus;
       row.style.display = show ? '' : 'none';
       if (show) vis++;
     });
     document.getElementById('recordCount').textContent = vis + ' Record' + (vis !== 1 ? 's' : '');
   }
 </script>
-
 </body>
 </html>

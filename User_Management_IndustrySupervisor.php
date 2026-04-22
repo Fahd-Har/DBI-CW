@@ -3,12 +3,12 @@ require_once 'db_connect.php';
 require_once 'auth_check.php';
 requireRole('admin');
 
-$supervisors = $conn->query("
-  SELECT s.SupervisorID, s.Name, s.Company, u.Username
-  FROM supervisor s
-  LEFT JOIN users u ON u.UserID = s.UserID
-  ORDER BY s.SupervisorID
+$companies = $conn->query("
+  SELECT CompanyID, CompanyName, Location, Sector 
+  FROM company 
+  ORDER BY CompanyID
 ");
+
 $success = $_GET['success'] ?? '';
 $error   = $_GET['error'] ?? '';
 ?>
@@ -65,79 +65,74 @@ $error   = $_GET['error'] ?? '';
   </div>
 
   <div class="table-card">
-    <div class="table-header">
-      <span>Supervisor Profiles</span>
-      <span class="table-count" id="recordCount"><?= $supervisors->num_rows ?> Records</span>
-    </div>
-    <table>
-      <thead>
-        <tr>
-          <th>Supervisor ID</th>
-          <th>Full Name</th>
-          <th>Company</th>
-          <th>Username</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody">
-        <?php while ($row = $supervisors->fetch_assoc()): ?>
-        <tr data-id="<?= $row['SupervisorID'] ?>"
-            data-name="<?= htmlspecialchars($row['Name'] ?? '') ?>"
-            data-company="<?= htmlspecialchars($row['Company'] ?? '') ?>">
-          <td><?= $row['SupervisorID'] ?></td>
-          <td><?= htmlspecialchars($row['Name'] ?? '') ?></td>
-          <td><?= htmlspecialchars($row['Company'] ?? '') ?></td>
-          <td><?= htmlspecialchars($row['Username'] ?? '-') ?></td>
-          <td>
-            <button class="btn-edit" onclick="editRow(this)">Edit</button>
-            <form method="POST" action="supervisor_actions.php" style="display:inline" onsubmit="return confirm('Delete this supervisor?')">
-              <input type="hidden" name="action" value="delete"/>
-              <input type="hidden" name="supervisor_id" value="<?= $row['SupervisorID'] ?>"/>
-              <button type="submit" class="btn-del">Delete</button>
-            </form>
-          </td>
-        </tr>
-        <?php endwhile; ?>
-      </tbody>
-    </table>
+  <div class="table-header">
+    <span>Company Profiles</span>
+    <span class="table-count" id="recordCount"><?= $companies->num_rows ?> Records</span>
   </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Company ID</th>
+        <th>Company Name</th>
+        <th>Location</th>
+        <th>Sector</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <?php while ($row = $companies->fetch_assoc()): ?>
+      <tr data-id="<?= $row['CompanyID'] ?>"
+          data-name="<?= htmlspecialchars($row['CompanyName'] ?? '') ?>"
+          data-location="<?= htmlspecialchars($row['Location'] ?? '') ?>"
+          data-sector="<?= htmlspecialchars($row['Sector'] ?? '') ?>">
+        <td><?= $row['CompanyID'] ?></td>
+        <td><?= htmlspecialchars($row['CompanyName'] ?? '') ?></td>
+        <td><?= htmlspecialchars($row['Location'] ?? '-') ?></td>
+        <td><?= htmlspecialchars($row['Sector'] ?? '-') ?></td>
+        <td>
+          <button class="btn-edit" onclick="editRow(this)">Edit</button>
+          <form method="POST" action="company_actions.php" style="display:inline" onsubmit="return confirm('Delete this company?')">
+            <input type="hidden" name="action" value="delete"/>
+            <input type="hidden" name="company_id" value="<?= $row['CompanyID'] ?>"/>
+            <button type="submit" class="btn-del">Delete</button>
+          </form>
+        </td>
+      </tr>
+      <?php endwhile; ?>
+    </tbody>
+  </table>
+</div>
 
 </main>
 
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
     <div class="modal-title">
-      <span id="modalHeading">Add Supervisor</span>
+      <span id="modalHeading">Add Company</span>
       <span class="badge-teal" id="modalBadge">New</span>
     </div>
-    <form method="POST" action="supervisor_actions.php">
+    <form method="POST" action="company_actions.php">
       <input type="hidden" name="action" id="formAction" value="add"/>
-      <input type="hidden" name="supervisor_id" id="fSupIdHidden" value=""/>
+      <input type="hidden" name="company_id" id="fCompanyIdHidden" value=""/>
 
       <div class="form-group">
-        <label>Supervisor Name *</label>
-        <input type="text" name="name" id="fSupName" placeholder="Full name" required/>
+        <label>Company Name *</label>
+        <input type="text" name="company_name" id="fCompanyName" placeholder="e.g. Maybank" required/>
       </div>
 
       <div class="form-group">
-        <label>Company *</label>
-        <input type="text" name="company" id="fCompany" placeholder="e.g. Maybank" required/>
+        <label>Location</label>
+        <input type="text" name="location" id="fLocation" placeholder="e.g. Kuala Lumpur"/>
       </div>
 
       <div class="form-group">
-        <label>Username * <span style="font-weight:normal;color:var(--muted);font-size:.75rem;">(used to log in as Assessor)</span></label>
-        <input type="text" name="username" id="fUsername" placeholder="e.g. supmaybank" required/>
-      </div>
-
-      <div class="form-group">
-        <label>Password *</label>
-        <input type="text" name="password" id="fPassword" placeholder="Enter password"/>
-        <small style="color:var(--muted);font-size:.72rem;">Leave blank when editing to keep current password.</small>
+        <label>Sector</label>
+        <input type="text" name="sector" id="fSector" placeholder="e.g. Banking"/>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="btn-save">Save Record</button>
+        <button type="submit" class="btn-save">Save Company</button>
       </div>
     </form>
   </div>
@@ -146,28 +141,24 @@ $error   = $_GET['error'] ?? '';
 <script>
   function openModal() {
     document.getElementById('formAction').value = 'add';
-    document.getElementById('fSupIdHidden').value = '';
-    document.getElementById('modalHeading').textContent = 'Add Supervisor';
-    document.getElementById('modalBadge').textContent = 'New';
-    document.getElementById('fSupName').value = '';
-    document.getElementById('fCompany').value = '';
-    document.getElementById('fUsername').value = '';
-    document.getElementById('fPassword').value = '';
-    document.getElementById('fPassword').required = true;
+    document.getElementById('fCompanyIdHidden').value = '';
+    document.getElementById('modalHeading').textContent = 'Add Company';
+    document.getElementById('fCompanyName').value = '';
+    document.getElementById('fLocation').value = '';
+    document.getElementById('fSector').value = '';
     document.getElementById('modalOverlay').classList.add('open');
   }
 
   function editRow(btn) {
     const tr = btn.closest('tr');
     document.getElementById('formAction').value = 'edit';
-    document.getElementById('fSupIdHidden').value = tr.dataset.id;
-    document.getElementById('modalHeading').textContent = 'Edit Supervisor';
-    document.getElementById('modalBadge').textContent = 'Editing';
-    document.getElementById('fSupName').value = tr.dataset.name;
-    document.getElementById('fCompany').value = tr.dataset.company;
-    document.getElementById('fUsername').value = tr.cells[3].textContent.trim() === '-' ? '' : tr.cells[3].textContent.trim();
-    document.getElementById('fPassword').value = '';
-    document.getElementById('fPassword').required = false;
+    document.getElementById('fCompanyIdHidden').value = tr.dataset.id;
+    document.getElementById('modalHeading').textContent = 'Edit Company';
+  
+    document.getElementById('fCompanyName').value = tr.dataset.name;
+    document.getElementById('fLocation').value = tr.dataset.location;
+    document.getElementById('fSector').value = tr.dataset.sector;
+  
     document.getElementById('modalOverlay').classList.add('open');
   }
 
