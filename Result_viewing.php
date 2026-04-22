@@ -51,7 +51,7 @@ while ($r = $results->fetch_assoc()) {
         $totalAssessed++;
         $sumFinal += $r['FinalMark'];
         if ($highest === null || $r['FinalMark'] > $highest['FinalMark']) $highest = $r;
-        if ($r['FinalMark'] >= 50) $passCount++;
+        if ($r['FinalMark'] >= 40) $passCount++;
     } else {
         $r['FinalMark'] = null;
         $pending++;
@@ -64,9 +64,10 @@ $passRate = $totalAssessed > 0 ? round(($passCount / $totalAssessed) * 100) : nu
 function grade($m) {
     if ($m === null) return '-';
     if ($m >= 80) return 'A';
-    if ($m >= 65) return 'B';
-    if ($m >= 50) return 'C';
-    if ($m >= 40) return 'D';
+    if ($m >= 70) return 'B';
+    if ($m >= 60) return 'C';
+    if ($m >= 50) return 'D';
+    if ($m >= 40) return 'E';
     return 'F';
 }
 
@@ -263,7 +264,7 @@ while ($b = $bRes->fetch_assoc()) {
     <div class="stat-card">
       <div class="stat-label">Pass Rate</div>
       <div class="stat-value"><?= $passRate !== null ? $passRate.'%' : '–' ?></div>
-      <div class="stat-note">Score ≥ 50</div>
+      <div class="stat-note">Score ≥ 40</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Pending</div>
@@ -285,12 +286,13 @@ while ($b = $bRes->fetch_assoc()) {
     </select>
     <select id="markFilter" onchange="filterTable()">
       <option value="">All Final Marks</option>
-      <option value="100">100</option>
       <option value="90">90 and above</option>
       <option value="80">80 and above</option>
       <option value="70">70 and above</option>
       <option value="60">60 and above</option>
       <option value="50">50 and above</option>
+      <option value="40">40 and above</option>
+
     </select>
     <select id="gradeFilter" onchange="filterTable()">
       <option value="">All Grades</option>
@@ -298,6 +300,7 @@ while ($b = $bRes->fetch_assoc()) {
       <option value="B">B</option>
       <option value="C">C</option>
       <option value="D">D</option>
+      <option value="E">E</option>
       <option value="F">F</option>
     </select>
     <select id="statusFilter" onchange="filterTable()">
