@@ -105,6 +105,7 @@ while ($b = $bRes->fetch_assoc()) {
     .topbar  { margin-bottom: 20px; }
     .stats-row { margin-bottom: 20px; }
     .filter-bar { margin-bottom: 16px; }
+    .filter-bar select { min-width: 140px; }
 
     /* ── Breakdown modal ── */
     .bd-overlay {
@@ -273,7 +274,7 @@ while ($b = $bRes->fetch_assoc()) {
 
   <div class="filter-bar">
     <input type="text" id="searchInput" placeholder="🔍  Search by ID, name or company…" oninput="filterTable()"/>
-        <select id="progFilter" onchange="filterTable()">
+    <select id="progFilter" onchange="filterTable()">
       <option value="">All Programmes</option>
       <?php
         $programmes = $conn->query("SELECT DISTINCT Programme FROM student ORDER BY Programme");
@@ -282,7 +283,28 @@ while ($b = $bRes->fetch_assoc()) {
         <option value="<?= htmlspecialchars($p['Programme']) ?>"><?= htmlspecialchars($p['Programme']) ?></option>
       <?php endwhile; ?>
     </select>
-
+    <select id="markFilter" onchange="filterTable()">
+      <option value="">All Final Marks</option>
+      <option value="100">100</option>
+      <option value="90">90 and above</option>
+      <option value="80">80 and above</option>
+      <option value="70">70 and above</option>
+      <option value="60">60 and above</option>
+      <option value="50">50 and above</option>
+    </select>
+    <select id="gradeFilter" onchange="filterTable()">
+      <option value="">All Grades</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+      <option value="D">D</option>
+      <option value="F">F</option>
+    </select>
+    <select id="statusFilter" onchange="filterTable()">
+      <option value="">All Status</option>
+      <option value="assessed">Assessed</option>
+      <option value="pending">Pending</option>
+    </select>
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
 
@@ -313,7 +335,10 @@ while ($b = $bRes->fetch_assoc()) {
         <tr data-id="<?= $r['StudentID'] ?>"
             data-name="<?= htmlspecialchars($r['StudentName']) ?>"
             data-prog="<?= htmlspecialchars($r['Programme']) ?>"
-            data-company="<?= htmlspecialchars($r['CompanyName'] ?? '') ?>">
+            data-company="<?= htmlspecialchars($r['CompanyName'] ?? '') ?>"
+            data-finalmark="<?= $r['FinalMark'] !== null ? $r['FinalMark'] : '' ?>"
+            data-grade="<?= $r['FinalMark'] !== null ? grade($r['FinalMark']) : '' ?>"
+            data-status="<?= $r['FullyAssessed'] ? 'assessed' : 'pending' ?>">
           <td>
             <div class="student-cell">
               <div class="stu-avatar"><?= strtoupper(substr($r['StudentName'],0,2)) ?></div>
@@ -443,13 +468,36 @@ while ($b = $bRes->fetch_assoc()) {
 <script>
   /* ── Filter table ── */
   function filterTable() {
-    const q    = document.getElementById('searchInput').value.toLowerCase();
-    const prog = document.getElementById('progFilter').value;
+    const q      = document.getElementById('searchInput').value.toLowerCase();
+    const prog   = document.getElementById('progFilter').value;
+    const mark   = document.getElementById('markFilter').value;
+    const grade  = document.getElementById('gradeFilter').value;
+    const status = document.getElementById('statusFilter').value;
     let vis = 0;
     document.querySelectorAll('#tableBody tr').forEach(row => {
       const matchQ = !q || row.dataset.name.toLowerCase().includes(q) || row.dataset.id.includes(q) || (row.dataset.company||'').toLowerCase().includes(q);
       const matchP = !prog || row.dataset.prog === prog;
-      const show = matchQ && matchP;
+
+      // Final Mark filter
+      let matchM = true;
+      if (mark) {
+        const fm = row.dataset.finalmark;
+        if (fm === '') {
+          matchM = false;  // pending rows have no mark
+        } else if (mark === '100') {
+          matchM = parseFloat(fm) === 100;
+        } else {
+          matchM = parseFloat(fm) >= parseFloat(mark);
+        }
+      }
+
+      // Grade filter
+      const matchG = !grade || row.dataset.grade === grade;
+
+      // Status filter
+      const matchS = !status || row.dataset.status === status;
+
+      const show = matchQ && matchP && matchM && matchG && matchS;
       row.style.display = show ? '' : 'none';
       if (show) vis++;
     });

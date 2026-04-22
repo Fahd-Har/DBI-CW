@@ -1,11 +1,9 @@
-
-
 <?php
 $host = '127.0.0.1';
-$port = 3306;
-$db   = 'database';
+$port = 3307;
+$db   = 'internship result management system';
 $user = 'root';
-$pass = 'root';
+$pass = '';
 
 $conn = new mysqli($host, $user, $pass, $db, $port);
 
@@ -18,7 +16,8 @@ $conn->set_charset("utf8mb4");
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
- 
+
+
  
  
 /* 
