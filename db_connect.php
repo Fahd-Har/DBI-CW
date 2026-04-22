@@ -1,7 +1,7 @@
 <?php
 $host = '127.0.0.1';
 $port = 3306;
-$db   = 'database';
+$db   = 'COMP1044_database';
 $user = 'root';
 $pass = 'root';
 

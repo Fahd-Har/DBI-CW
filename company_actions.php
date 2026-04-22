@@ -6,17 +6,16 @@ requireRole('admin');
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
+    // --- ACTION: ADD ---
     if ($action === 'add') {
-        $company_name    = $_POST['company_name'];
-        $location        = $_POST['location'];
-        $sector          = $_POST['sector'];
-        $supervisor_name = $_POST['supervisor_name'];
-        $username        = $_POST['username'];
-        $password        = $_POST['password'];
+        $company_name    = trim($_POST['company_name'] ?? '');
+        $location        = trim($_POST['location'] ?? '');
+        $sector          = trim($_POST['sector'] ?? '');
+        $supervisor_name = trim($_POST['supervisor_name'] ?? '');
+        $username        = trim($_POST['username'] ?? '');
+        $password        = $_POST['password'] ?? '';
 
-        // Start Transaction to ensure all or nothing is saved
         $conn->begin_transaction();
-
         try {
             // 1. Create User Account
             $stmtUser = $conn->prepare("INSERT INTO users (Username, Password, Role) VALUES (?, ?, 'supervisor')");
@@ -38,33 +37,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: User_Management_IndustrySupervisor.php?success=New company and supervisor added.");
         } catch (Exception $e) {
             $conn->rollback();
+            error_log($e->getMessage());
             header("Location: User_Management_IndustrySupervisor.php?error=Error: " . urlencode($e->getMessage()));
         }
+        exit;
     } 
     
+    // --- ACTION: EDIT ---
     elseif ($action === 'edit') {
-        $id = $_POST['company_id'];
-        $company_name    = $_POST['company_name'];
-        $location        = $_POST['location'];
-        $sector          = $_POST['sector'];
-        $supervisor_name = $_POST['supervisor_name'];
-        $username        = $_POST['username'];
-        $password        = $_POST['password'];
+        $company_id      = intval($_POST['company_id'] ?? 0);
+        $company_name    = trim($_POST['company_name'] ?? '');
+        $location        = trim($_POST['location'] ?? '');
+        $sector          = trim($_POST['sector'] ?? '');
+        $supervisor_name = trim($_POST['supervisor_name'] ?? '');
+        $username        = trim($_POST['username'] ?? '');
+        $password        = $_POST['password'] ?? '';
 
         $conn->begin_transaction();
-
         try {
-            // 1. Update Company (Primary Table)
+            // 1. Get current company name before updating (needed to find the supervisor)
+            $oldQ = $conn->prepare("SELECT CompanyName FROM company WHERE CompanyID = ?");
+            $oldQ->bind_param("i", $company_id);
+            $oldQ->execute();
+            $oldName = $oldQ->get_result()->fetch_assoc()['CompanyName'] ?? '';
+
+            // 2. Update Company
             $stmtCo = $conn->prepare("UPDATE company SET CompanyName=?, Location=?, Sector=? WHERE CompanyID=?");
-            $stmtCo->bind_param("sssi", $company_name, $location, $sector, $id);
+            $stmtCo->bind_param("sssi", $company_name, $location, $sector, $company_id);
             $stmtCo->execute();
 
-            // 2. Update Supervisor Name and Link
-            $stmtSup = $conn->prepare("UPDATE supervisor SET Name=?, Company=? WHERE Company = (SELECT CompanyName FROM (SELECT CompanyName FROM company WHERE CompanyID=?) as x)");
-            // Note: This logic assumes Company names are unique or relies on the specific link
-            // A better way is joining by UserID if available.
+            // 3. Update Supervisor (linked by the old company name)
+            $stmtSup = $conn->prepare("UPDATE supervisor SET Name=?, Company=? WHERE Company=?");
+            $stmtSup->bind_param("sss", $supervisor_name, $company_name, $oldName);
+            $stmtSup->execute();
             
-            // 3. Update User (and Password if provided)
+            // 4. Update User Password if provided, otherwise just Username
             if (!empty($password)) {
                 $stmtU = $conn->prepare("UPDATE users u JOIN supervisor s ON u.UserID = s.UserID SET u.Username=?, u.Password=? WHERE s.Company=?");
                 $stmtU->bind_param("sss", $username, $password, $company_name);
@@ -78,7 +85,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: User_Management_IndustrySupervisor.php?success=Record updated successfully.");
         } catch (Exception $e) {
             $conn->rollback();
+            error_log($e->getMessage());
             header("Location: User_Management_IndustrySupervisor.php?error=Update failed.");
         }
+        exit;
+    }
+
+    elseif ($action === 'delete') {
+        $company_id = intval($_POST['company_id'] ?? 0);
+
+        $conn->begin_transaction();
+        try {
+            // 1. Find the UserID and CompanyName
+            $find = $conn->prepare("SELECT s.UserID, c.CompanyName FROM company c LEFT JOIN supervisor s ON s.Company = c.CompanyName WHERE c.CompanyID = ?");
+            $find->bind_param("i", $company_id);
+            $find->execute();
+            $data = $find->get_result()->fetch_assoc();
+            
+            if ($data) {
+                $uid = $data['UserID'];
+                
+                // 2. Delete Supervisor (Child)
+                $delSup = $conn->prepare("DELETE FROM supervisor WHERE UserID = ?");
+                $delSup->bind_param("i", $uid);
+                $delSup->execute();
+
+                // 3. Delete User (Parent of Supervisor)
+                $delUser = $conn->prepare("DELETE FROM users WHERE UserID = ?");
+                $delUser->bind_param("i", $uid);
+                $delUser->execute();
+
+                // 4. Delete Company
+                $delCo = $conn->prepare("DELETE FROM company WHERE CompanyID = ?");
+                $delCo->bind_param("i", $company_id);
+                $delCo->execute();
+            }
+
+            $conn->commit();
+            header("Location: User_Management_IndustrySupervisor.php?success=Supervisor and Company deleted.");
+        } catch (mysqli_sql_exception $e) {
+            $conn->rollback();
+            error_log("Delete Error: " . $e->getMessage());
+            // Most common error is FK constraint with Internship table
+            header("Location: User_Management_IndustrySupervisor.php?error=Cannot delete. This company is likely linked to an existing internship record.");
+        }
+        exit;
     }
 }
