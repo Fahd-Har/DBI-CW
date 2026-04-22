@@ -4,9 +4,17 @@ require_once 'auth_check.php';
 requireRole('admin');
 
 $companies = $conn->query("
-  SELECT CompanyID, CompanyName, Location, Sector 
-  FROM company 
-  ORDER BY CompanyID
+  SELECT 
+    c.CompanyID, 
+    c.CompanyName, 
+    c.Location, 
+    c.Sector, 
+    u.Username, 
+    s.Name AS SupervisorName
+  FROM company c
+  LEFT JOIN supervisor s ON s.Company = c.CompanyName
+  LEFT JOIN users u ON u.UserID = s.UserID
+  ORDER BY c.CompanyID
 ");
 
 $success = $_GET['success'] ?? '';
@@ -60,55 +68,61 @@ $error   = $_GET['error'] ?? '';
   <?php endif; ?>
 
   <div class="filter-bar">
-    <input type="text" id="searchInput" placeholder="🔍  Search by supervisor ID or name…" oninput="filterTable()"/>
+    <input type="text" id="searchInput" placeholder="🔍  Search by Company Name or Supervisor..." oninput="filterTable()"/>
     <button class="btn-search" onclick="filterTable()">Search</button>
   </div>
 
   <div class="table-card">
-  <div class="table-header">
-    <span>Company Profiles</span>
-    <span class="table-count" id="recordCount"><?= $companies->num_rows ?> Records</span>
+    <div class="table-header">
+      <span>Company & Supervisor Profiles</span>
+      <span class="table-count" id="recordCount"><?= $companies->num_rows ?> Records</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Company Name</th>
+          <th>Location</th>
+          <th>Sector</th>
+          <th>Supervisor Name</th>
+          <th>Username</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <?php while ($row = $companies->fetch_assoc()): ?>
+        <tr data-id="<?= $row['CompanyID'] ?>"
+            data-name="<?= htmlspecialchars($row['CompanyName'] ?? '') ?>"
+            data-location="<?= htmlspecialchars($row['Location'] ?? '') ?>"
+            data-sector="<?= htmlspecialchars($row['Sector'] ?? '') ?>"
+            data-username="<?= htmlspecialchars($row['Username'] ?? '') ?>"
+            data-supname="<?= htmlspecialchars($row['SupervisorName'] ?? '') ?>">
+          <td><?= $row['CompanyID'] ?></td>
+          <td><?= htmlspecialchars($row['CompanyName'] ?? '') ?></td>
+          <td><?= htmlspecialchars($row['Location'] ?? '-') ?></td>
+          <td><?= htmlspecialchars($row['Sector'] ?? '-') ?></td>
+          <td><?= htmlspecialchars($row['SupervisorName'] ?? '-') ?></td>
+          <td><?= htmlspecialchars($row['Username'] ?? '-') ?></td>
+          <td>
+            <button class="btn-edit" onclick="editRow(this)">Edit</button>
+            <form method="POST" action="company_actions.php" style="display:inline" onsubmit="return confirm('Delete this company and associated login?')">
+              <input type="hidden" name="action" value="delete"/>
+              <input type="hidden" name="company_id" value="<?= $row['CompanyID'] ?>"/>
+              <button type="submit" class="btn-del">Delete</button>
+            </form>
+          </td>
+        </tr>
+        <?php endwhile; ?>
+      </tbody>
+    </table>
   </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Company ID</th>
-        <th>Company Name</th>
-        <th>Location</th>
-        <th>Sector</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody">
-      <?php while ($row = $companies->fetch_assoc()): ?>
-      <tr data-id="<?= $row['CompanyID'] ?>"
-          data-name="<?= htmlspecialchars($row['CompanyName'] ?? '') ?>"
-          data-location="<?= htmlspecialchars($row['Location'] ?? '') ?>"
-          data-sector="<?= htmlspecialchars($row['Sector'] ?? '') ?>">
-        <td><?= $row['CompanyID'] ?></td>
-        <td><?= htmlspecialchars($row['CompanyName'] ?? '') ?></td>
-        <td><?= htmlspecialchars($row['Location'] ?? '-') ?></td>
-        <td><?= htmlspecialchars($row['Sector'] ?? '-') ?></td>
-        <td>
-          <button class="btn-edit" onclick="editRow(this)">Edit</button>
-          <form method="POST" action="company_actions.php" style="display:inline" onsubmit="return confirm('Delete this company?')">
-            <input type="hidden" name="action" value="delete"/>
-            <input type="hidden" name="company_id" value="<?= $row['CompanyID'] ?>"/>
-            <button type="submit" class="btn-del">Delete</button>
-          </form>
-        </td>
-      </tr>
-      <?php endwhile; ?>
-    </tbody>
-  </table>
-</div>
 
 </main>
 
 <div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
   <div class="modal">
     <div class="modal-title">
-      <span id="modalHeading">Add Company</span>
+      <span id="modalHeading">Add Company & Supervisor</span>
       <span class="badge-teal" id="modalBadge">New</span>
     </div>
     <form method="POST" action="company_actions.php">
@@ -120,19 +134,38 @@ $error   = $_GET['error'] ?? '';
         <input type="text" name="company_name" id="fCompanyName" placeholder="e.g. Maybank" required/>
       </div>
 
+      <div class="form-row" style="display:flex; gap:10px;">
+        <div class="form-group" style="flex:1;">
+          <label>Location</label>
+          <input type="text" name="location" id="fLocation" placeholder="e.g. Kuala Lumpur"/>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Sector</label>
+          <input type="text" name="sector" id="fSector" placeholder="e.g. Banking"/>
+        </div>
+      </div>
+
+      <hr style="margin:15px 0; border:0; border-top:1px solid #eee;">
+
       <div class="form-group">
-        <label>Location</label>
-        <input type="text" name="location" id="fLocation" placeholder="e.g. Kuala Lumpur"/>
+        <label>Supervisor Full Name *</label>
+        <input type="text" name="supervisor_name" id="fSupName" placeholder="Name of person in charge" required/>
       </div>
 
       <div class="form-group">
-        <label>Sector</label>
-        <input type="text" name="sector" id="fSector" placeholder="e.g. Banking"/>
+        <label>Username *</label>
+        <input type="text" name="username" id="fUsername" placeholder="Login username" required/>
+      </div>
+
+      <div class="form-group">
+        <label>Password *</label>
+        <input type="text" name="password" id="fPassword" placeholder="Enter password"/>
+        <small id="passHint" style="color:var(--muted); font-size:0.72rem; display:none;">Leave blank to keep current password.</small>
       </div>
 
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
-        <button type="submit" class="btn-save">Save Company</button>
+        <button type="submit" class="btn-save">Save Record</button>
       </div>
     </form>
   </div>
@@ -142,10 +175,19 @@ $error   = $_GET['error'] ?? '';
   function openModal() {
     document.getElementById('formAction').value = 'add';
     document.getElementById('fCompanyIdHidden').value = '';
-    document.getElementById('modalHeading').textContent = 'Add Company';
+    document.getElementById('modalHeading').textContent = 'Add Company & Supervisor';
+    document.getElementById('modalBadge').textContent = 'New';
+    
+    // Reset Fields
     document.getElementById('fCompanyName').value = '';
     document.getElementById('fLocation').value = '';
     document.getElementById('fSector').value = '';
+    document.getElementById('fSupName').value = '';
+    document.getElementById('fUsername').value = '';
+    document.getElementById('fPassword').value = '';
+    document.getElementById('fPassword').required = true;
+    document.getElementById('passHint').style.display = 'none';
+    
     document.getElementById('modalOverlay').classList.add('open');
   }
 
@@ -153,11 +195,18 @@ $error   = $_GET['error'] ?? '';
     const tr = btn.closest('tr');
     document.getElementById('formAction').value = 'edit';
     document.getElementById('fCompanyIdHidden').value = tr.dataset.id;
-    document.getElementById('modalHeading').textContent = 'Edit Company';
+    document.getElementById('modalHeading').textContent = 'Edit Record';
+    document.getElementById('modalBadge').textContent = 'Editing';
   
     document.getElementById('fCompanyName').value = tr.dataset.name;
     document.getElementById('fLocation').value = tr.dataset.location;
     document.getElementById('fSector').value = tr.dataset.sector;
+    document.getElementById('fSupName').value = tr.dataset.supname;
+    document.getElementById('fUsername').value = tr.dataset.username;
+    
+    document.getElementById('fPassword').value = '';
+    document.getElementById('fPassword').required = false;
+    document.getElementById('passHint').style.display = 'block';
   
     document.getElementById('modalOverlay').classList.add('open');
   }
@@ -169,7 +218,10 @@ $error   = $_GET['error'] ?? '';
     const q = document.getElementById('searchInput').value.toLowerCase();
     let vis = 0;
     document.querySelectorAll('#tableBody tr').forEach(row => {
-      const match = !q || row.dataset.name.toLowerCase().includes(q) || row.dataset.id.includes(q);
+      const match = !q || 
+                    row.dataset.name.toLowerCase().includes(q) || 
+                    row.dataset.supname.toLowerCase().includes(q) ||
+                    row.dataset.id.includes(q);
       row.style.display = match ? '' : 'none';
       if (match) vis++;
     });
