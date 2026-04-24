@@ -598,14 +598,14 @@ $gradeInfo = grade($finalMark);
           <div class="ic-total-box lec">
             <div class="ic-total-label">Lecturer Total</div>
             <div class="ic-total-val"><?= $intern['LecturerTotal'] ?></div>
-            <div class="ic-total-note">Out of 90</div>
+            <div class="ic-total-note">Out of 100</div>
           </div>
           <?php endif; ?>
           <?php if ($hasS): ?>
           <div class="ic-total-box sup">
             <div class="ic-total-label">Supervisor Total</div>
             <div class="ic-total-val"><?= $intern['SupervisorTotal'] ?></div>
-            <div class="ic-total-note">Out of 90</div>
+            <div class="ic-total-note">Out of 100</div>
           </div>
           <?php endif; ?>
           <?php if ($both): ?>
