@@ -46,29 +46,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
 
                 if ($roleMatch) {
+                    session_regenerate_id(true);
                     $_SESSION['user_id']  = $user['UserID'];
                     $_SESSION['username'] = $user['Username'];
-                    $_SESSION['role']     = $user['Role'];
+                    $_SESSION['role']     = strtolower($user['Role']);
 
                     if ($dbRole === 'lecturer') {
-                        $q = $conn->prepare("SELECT LecturerID, Name FROM lecturer WHERE UserID = ?");
-                        $q->bind_param("i", $user['UserID']);
-                        $q->execute();
-                        $r = $q->get_result()->fetch_assoc();
+                      $q = $conn->prepare("SELECT LecturerID, Name FROM lecturer WHERE UserID = ?");
+                      $q->bind_param("i", $user['UserID']);
+                      $q->execute();
+                      $r = $q->get_result()->fetch_assoc();
+                      if (!$r) {
+                        session_destroy();
+                        header("Location: login_page.php?error=" . urlencode("Your lecturer profile is missing. Contact Admin."));
+                        exit;
+                        }
                         $_SESSION['assessor_id']   = $r['LecturerID'];
                         $_SESSION['assessor_name'] = $r['Name'];
                         header("Location: LecturerStudentList.php");
                         exit;
-
-                    } elseif ($dbRole === 'supervisor') {
-                        $q = $conn->prepare("SELECT SupervisorID, Name FROM supervisor WHERE UserID = ?");
-                        $q->bind_param("i", $user['UserID']);
-                        $q->execute();
-                        $r = $q->get_result()->fetch_assoc();
-                        $_SESSION['assessor_id']   = $r['SupervisorID'];
-                        $_SESSION['assessor_name'] = $r['Name'];
-                        header("Location: SupervisorStudentList.php");
-                        exit;
+                } elseif ($dbRole === 'supervisor') {
+                   $q = $conn->prepare("SELECT SupervisorID, Name FROM supervisor WHERE UserID = ?");
+                   $q->bind_param("i", $user['UserID']);
+                   $q->execute();
+                   $r = $q->get_result()->fetch_assoc();
+                  if (!$r) {
+                    session_destroy();
+                    header("Location: login_page.php?error=" . urlencode("Your supervisor profile is missing. Contact Admin."));
+                    exit;
+    }
+    $_SESSION['assessor_id']   = $r['SupervisorID'];
+    $_SESSION['assessor_name'] = $r['Name'];
+    header("Location: SupervisorStudentList.php");
+    exit;
 
                     } elseif ($dbRole === 'student') {
                         header("Location: student_dashboard.php");

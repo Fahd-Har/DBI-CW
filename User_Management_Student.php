@@ -3,7 +3,12 @@ require_once 'db_connect.php';
 require_once 'auth_check.php';
 requireRole('admin');
 
-$students = $conn->query("SELECT * FROM student ORDER BY StudentID");
+$students = $conn->query("
+  SELECT s.StudentID, s.Name, s.Programme, u.Username
+  FROM student s
+  LEFT JOIN users u ON u.UserID = s.UserID
+  ORDER BY s.StudentID
+");
 $success = $_GET['success'] ?? '';
 $error   = $_GET['error'] ?? '';
 ?>
@@ -96,6 +101,7 @@ $error   = $_GET['error'] ?? '';
           <th>Student ID</th>
           <th>Full Name</th>
           <th>Programme</th>
+          <th>Username</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -104,11 +110,13 @@ $error   = $_GET['error'] ?? '';
         <?php while ($row = $students->fetch_assoc()): ?>
         <tr data-id="<?= $row['StudentID'] ?>"
             data-name="<?= htmlspecialchars($row['Name']) ?>"
-            data-programme="<?= htmlspecialchars($row['Programme']) ?>">
+            data-programme="<?= htmlspecialchars($row['Programme']) ?>"
+            data-username="<?= htmlspecialchars($row['Username'] ?? '') ?>">
 
           <td><?= $row['StudentID'] ?></td>
           <td><?= htmlspecialchars($row['Name']) ?></td>
           <td><?= htmlspecialchars($row['Programme']) ?></td>
+          <td><?= htmlspecialchars($row['Username'] ?? '—') ?></td>
 
           <td>
             <button class="btn-edit" onclick="editRow(this)">Edit</button>
@@ -165,6 +173,17 @@ $error   = $_GET['error'] ?? '';
         </select>
       </div>
 
+      <div class="form-group">
+  <label>Username *</label>
+  <input type="text" name="username" id="fUsername" required/>
+</div>
+
+<div class="form-group">
+  <label>Password <span id="pwHint">*</span></label>
+  <input type="text" name="password" id="fPassword"/>
+  <small id="pwEditNote" style="display:none;color:#888;">Leave blank to keep the current password.</small>
+</div>
+
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
         <button type="submit" class="btn-save">Save Record</button>
@@ -179,25 +198,30 @@ function openModal() {
   document.getElementById('formAction').value = 'add';
   document.getElementById('modalHeading').textContent = 'Add Student';
   document.getElementById('modalBadge').textContent = 'New';
-
   document.getElementById('fStudentId').value = '';
   document.getElementById('fStudentName').value = '';
   document.getElementById('fProgramme').value = '';
-
+  document.getElementById('fUsername').value = '';
+  document.getElementById('fPassword').value = '';
+  document.getElementById('fPassword').required = true;
+  document.getElementById('pwHint').textContent = '*';
+  document.getElementById('pwEditNote').style.display = 'none';
   document.getElementById('modalOverlay').classList.add('open');
 }
 
 function editRow(btn) {
   const tr = btn.closest('tr');
-
   document.getElementById('formAction').value = 'edit';
   document.getElementById('modalHeading').textContent = 'Edit Student';
   document.getElementById('modalBadge').textContent = 'Editing';
-
   document.getElementById('fStudentId').value = tr.dataset.id;
   document.getElementById('fStudentName').value = tr.dataset.name;
   document.getElementById('fProgramme').value = tr.dataset.programme;
-
+  document.getElementById('fUsername').value = tr.dataset.username || '';
+  document.getElementById('fPassword').value = '';
+  document.getElementById('fPassword').required = false;
+  document.getElementById('pwHint').textContent = '';
+  document.getElementById('pwEditNote').style.display = 'block';
   document.getElementById('modalOverlay').classList.add('open');
 }
 

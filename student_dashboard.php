@@ -12,9 +12,7 @@ $stmt->execute();
 $student = $stmt->get_result()->fetch_assoc();
 
 if (!$student) {
-    // UserID exists in users table but isn't linked to a student yet
-    session_destroy();
-    header("Location: login_page.php?error=" . urlencode("Your account is not linked to a student record. Please contact Admin."));
+    header("Location: logout.php?error=" . urlencode("Your account is not linked to a student record. Please contact Admin."));
     exit;
 }
 
@@ -59,7 +57,7 @@ $internships = $stmt2->get_result()->fetch_all(MYSQLI_ASSOC);
 // ── Fetch per-criteria breakdown for each internship ──
 $breakdown = [];
 if ($internships) {
-    $ids = implode(',', array_column($internships, 'InternshipID'));
+    $ids = implode(',', array_map('intval', array_column($internships, 'InternshipID')));
     $bSql = "
         SELECT InternshipID, LecturerID, SupervisorID,
                UndertakingTaskOrProject, HealthSafetyWorkplace, ConnectivityTheoreticalKnowledge,
@@ -77,14 +75,14 @@ if ($internships) {
     }
 }
 
-// ── Helpers ──
 function grade($m) {
-    if ($m === null) return ['label' => '–',  'class' => ''];
-    if ($m >= 80)    return ['label' => 'A',  'class' => 'grade-a'];
-    if ($m >= 65)    return ['label' => 'B',  'class' => 'grade-b'];
-    if ($m >= 50)    return ['label' => 'C',  'class' => 'grade-c'];
-    if ($m >= 40)    return ['label' => 'D',  'class' => 'grade-d'];
-    return                  ['label' => 'F',  'class' => 'grade-f'];
+    if ($m === null) return ['label' => '–', 'class' => ''];
+    if ($m >= 80)    return ['label' => 'A', 'class' => 'grade-a'];
+    if ($m >= 70)    return ['label' => 'B', 'class' => 'grade-b'];
+    if ($m >= 60)    return ['label' => 'C', 'class' => 'grade-c'];
+    if ($m >= 50)    return ['label' => 'D', 'class' => 'grade-d'];
+    if ($m >= 40)    return ['label' => 'E', 'class' => 'grade-e'];
+    return                  ['label' => 'F', 'class' => 'grade-f'];
 }
 
 // Compute finals for the first (most recent) internship for the summary cards
@@ -261,6 +259,7 @@ $gradeInfo = grade($finalMark);
     .grade-b { color: var(--accent); }
     .grade-c { color: var(--gold); }
     .grade-d { color: #f39c12; }
+    .grade-e { color: #e67e22; }
     .grade-f { color: var(--danger); }
 
     /* Section title */
@@ -471,7 +470,7 @@ $gradeInfo = grade($finalMark);
       <div class="sum-note">
         <?php
           if ($finalMark === null) echo 'Awaiting assessment';
-          elseif ($finalMark >= 50) echo 'Pass';
+          elseif ($finalMark >= 40) echo 'Pass';
           else echo 'Fail';
         ?>
       </div>
