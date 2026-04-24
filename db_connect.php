@@ -1,9 +1,10 @@
+
 <?php
 $host = '127.0.0.1';
-$port = 3306;
-$db   = 'COMP1044_database';
+$port = 3307;
+$db   = 'internship result management system';
 $user = 'root';
-$pass = 'root';
+$pass = '';
 
 $conn = new mysqli($host, $user, $pass, $db, $port);
 
@@ -17,8 +18,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-
- 
  
 /* 
 

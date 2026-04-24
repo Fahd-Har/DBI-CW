@@ -4,9 +4,12 @@ if (session_status() === PHP_SESSION_NONE) session_start();
 
 // If already logged in, redirect
 if (isset($_SESSION['user_id'])) {
-    if ($_SESSION['role'] === 'admin') header("Location: Admin_page.php");
-    elseif ($_SESSION['role'] === 'lecturer') header("Location: LecturerStudentList.php");
-    else header("Location: SupervisorStudentList.php");
+    $r = strtolower($_SESSION['role']);
+    if ($r === 'admin')      header("Location: Admin_page.php");
+    elseif ($r === 'lecturer')   header("Location: LecturerStudentList.php");
+    elseif ($r === 'supervisor') header("Location: SupervisorStudentList.php");
+    elseif ($r === 'student')    header("Location: student_dashboard.php");
+    else header("Location: login_page.php");
     exit;
 }
 
@@ -32,13 +35,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $result->fetch_assoc();
 
             if ($user['Password'] === $password) {
-                $dbRole = strtolower($user['Role']);
+                $dbRole       = strtolower($user['Role']);
                 $selectedRole = strtolower($role);
-                $isAssessor = ($dbRole === 'lecturer' || $dbRole === 'supervisor');
+                $isAssessor   = ($dbRole === 'lecturer' || $dbRole === 'supervisor');
 
-                if (($selectedRole === 'admin' && $dbRole === 'admin') ||
-                    ($selectedRole === 'assessor' && $isAssessor)) {
+                $roleMatch = (
+                    ($selectedRole === 'admin'    && $dbRole === 'admin') ||
+                    ($selectedRole === 'assessor' && $isAssessor)         ||
+                    ($selectedRole === 'student'  && $dbRole === 'student')
+                );
 
+                if ($roleMatch) {
                     $_SESSION['user_id']  = $user['UserID'];
                     $_SESSION['username'] = $user['Username'];
                     $_SESSION['role']     = $user['Role'];
@@ -48,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $q->bind_param("i", $user['UserID']);
                         $q->execute();
                         $r = $q->get_result()->fetch_assoc();
-                        $_SESSION['assessor_id']  = $r['LecturerID'];
+                        $_SESSION['assessor_id']   = $r['LecturerID'];
                         $_SESSION['assessor_name'] = $r['Name'];
                         header("Location: LecturerStudentList.php");
                         exit;
@@ -58,9 +65,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $q->bind_param("i", $user['UserID']);
                         $q->execute();
                         $r = $q->get_result()->fetch_assoc();
-                        $_SESSION['assessor_id']  = $r['SupervisorID'];
+                        $_SESSION['assessor_id']   = $r['SupervisorID'];
                         $_SESSION['assessor_name'] = $r['Name'];
                         header("Location: SupervisorStudentList.php");
+                        exit;
+
+                    } elseif ($dbRole === 'student') {
+                        header("Location: student_dashboard.php");
                         exit;
 
                     } else {
@@ -137,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       flex-shrink: 0;
       box-shadow: 0 2px 8px rgba(0,0,0,.18);
     }
-    .logo-bg img { width: 72px; height: 72px; object-fit: contain; display: block; }
+    .logo-bg img { width: 52px; height: 52px; object-fit: contain; display: block; }
     .left-logo-text .unm {
       font-family: 'Sora', sans-serif;
       font-size: 1.4rem;
@@ -226,6 +237,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       color: var(--muted);
       margin-bottom: 32px;
     }
+
+    /* ── 3-tab role toggle ── */
     .role-toggle {
       display: flex;
       background: var(--light);
@@ -240,13 +253,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       text-align: center;
       padding: 9px 0;
       font-family: 'DM Sans', sans-serif;
-      font-size: .86rem;
+      font-size: .82rem;
       font-weight: 600;
       color: var(--muted);
       border-radius: 9px;
       cursor: pointer;
       transition: color .2s;
       position: relative; z-index: 1;
+      white-space: nowrap;
     }
     .role-toggle input[type="radio"]:checked + label {
       color: var(--navy);
@@ -254,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .toggle-pill {
       position: absolute;
       top: 4px; left: 4px;
-      width: calc(50% - 4px);
+      width: calc(33.333% - 2.67px);
       height: calc(100% - 8px);
       background: var(--white);
       border-radius: 9px;
@@ -262,7 +276,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       transition: transform .25s cubic-bezier(.4,0,.2,1);
       pointer-events: none;
     }
-    #roleAssessor:checked ~ .toggle-pill { transform: translateX(100%); }
+    /* Pill moves to slot 2 (Assessor) or slot 3 (Student) */
+    #roleAssessor:checked ~ .toggle-pill { transform: translateX(calc(100% + 2.67px)); }
+    #roleStudent:checked  ~ .toggle-pill { transform: translateX(calc(200% + 5.33px)); }
+
     .lf-group { margin-bottom: 20px; }
     .lf-group label {
       display: block;
@@ -309,6 +326,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       transition: opacity .2s;
     }
     .pw-toggle:hover { opacity: 1; }
+    .lf-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 26px;
+    }
+    .lf-remember {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .83rem; color: var(--muted); cursor: pointer;
+    }
+    .lf-remember input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--teal);
+      cursor: pointer;
+    }
+    .lf-forgot {
+      font-size: .83rem;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .lf-forgot:hover { text-decoration: underline; }
     .btn-login {
       width: 100%;
       padding: 13px;
@@ -386,7 +425,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
       <div class="feat-item">
         <div class="feat-dot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
-        Comprehensive result viewing
+        Students can view their own results
       </div>
     </div>
   </div>
@@ -401,7 +440,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="login-card-title">Welcome back</div>
     <div class="login-card-sub">Sign in to your account to continue.</div>
 
-    <!-- Show error from PHP if login failed -->
     <?php if ($error): ?>
       <div class="alert-box">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -409,15 +447,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
     <?php endif; ?>
 
-    <!-- Form now submits to THIS SAME FILE via POST -->
     <form method="POST" action="login_page.php">
 
-      <!-- Role toggle -->
+      <!-- 3-way role toggle -->
       <div class="role-toggle">
-        <input type="radio" name="role" id="roleAdmin" value="admin" checked/>
+        <input type="radio" name="role" id="roleAdmin"    value="admin"    checked/>
         <label for="roleAdmin">Admin</label>
         <input type="radio" name="role" id="roleAssessor" value="assessor"/>
         <label for="roleAssessor">Assessor</label>
+        <input type="radio" name="role" id="roleStudent"  value="student"/>
+        <label for="roleStudent">Student</label>
         <div class="toggle-pill"></div>
       </div>
 
@@ -440,6 +479,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
+      </div>
+
+      <!-- Remember + Forgot -->
+      <div class="lf-row">
+        <label class="lf-remember">
+          <input type="checkbox" id="rememberMe"/>
+          Remember me
+        </label>
+        <a href="#" class="lf-forgot">Forgot password?</a>
       </div>
 
       <!-- Submit -->
