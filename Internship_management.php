@@ -22,7 +22,7 @@ $internships = $conn->query("
 $all_companies = $conn->query("SELECT CompanyID, CompanyName FROM company ORDER BY CompanyName");
 $students    = $conn->query("SELECT StudentID, Name FROM student ORDER BY Name");
 $lecturers   = $conn->query("SELECT LecturerID, Name FROM lecturer ORDER BY Name");
-$supervisors = $conn->query("SELECT SupervisorID, Name FROM supervisor ORDER BY Name");
+$supervisors = $conn->query("SELECT SupervisorID, Name, CompanyID FROM supervisor ORDER BY Name");
 
 $success = $_GET['success'] ?? '';
 $error   = $_GET['error'] ?? '';
@@ -199,7 +199,10 @@ function statusFromDates($start, $end) {
           <select name="supervisor_id" id="fSupervisor" required>
             <option value="">Select supervisor</option>
             <?php $supervisors->data_seek(0); while ($sv = $supervisors->fetch_assoc()): ?>
-              <option value="<?= $sv['SupervisorID'] ?>"><?= htmlspecialchars($sv['Name']) ?></option>
+              <option value="<?= $sv['SupervisorID'] ?>" 
+                  data-company="<?= $sv['CompanyID'] ?>">
+                <?= htmlspecialchars($sv['Name']) ?>
+              </option>
             <?php endwhile; ?>
           </select>
         </div>
@@ -283,6 +286,8 @@ function statusFromDates($start, $end) {
         }
     }
 
+    filterSupervisors();
+
     document.getElementById('fStartDate').value = tr.dataset.start;
     document.getElementById('fEndDate').value = tr.dataset.end;
     document.getElementById('modalOverlay').classList.add('open');
@@ -290,6 +295,29 @@ function statusFromDates($start, $end) {
 
   function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
   function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+  function filterSupervisors() { 
+    const companySelect = document.getElementById('fCompanySelect');
+    const selectedCompany = companySelect.value;
+
+    const supervisorSelect = document.getElementById('fSupervisor'); 
+
+    for (let i = 0; i < supervisorSelect.options.length; i++) { 
+      const opt = supervisorSelect.options[i];
+
+      if (!opt.value) continue; // skip default
+
+      if (opt.dataset.company === selectedCompany) { 
+        opt.style.display = ''; 
+      } else { 
+        opt.style.display = 'none'; 
+      } 
+    } 
+
+    supervisorSelect.value = '';
+  }
+
+  document.getElementById('fCompanySelect').addEventListener('change', filterSupervisors);
 
   function filterTable() {
     const q = document.getElementById('searchInput').value.toLowerCase();

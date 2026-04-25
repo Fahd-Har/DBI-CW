@@ -30,6 +30,19 @@ function monthsBetween($startStr, $endStr) {
     }
 }
 
+function isSupervisorFromCompany($conn, $supervisorId, $companyId) {
+    $stmt = $conn->prepare("
+        SELECT 1
+        FROM supervisor s
+        JOIN company c ON s.CompanyID = c.CompanyID
+        WHERE s.SupervisorID = ? AND c.CompanyID = ?
+    ");
+    $stmt->bind_param("ii", $supervisorId, $companyId);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    return $res->num_rows > 0;
+}
+
 $action = $_POST['action'] ?? '';
 
 if ($action === 'add') {
@@ -47,6 +60,10 @@ if ($action === 'add') {
     }
     if (strtotime($end) <= strtotime($start)) {
         header("Location: Internship_management.php?error=" . urlencode("End date must be after start date"));
+        exit;
+    }
+    if (!isSupervisorFromCompany($conn, $supervisorId, $companyId)) {
+        header("Location: Internship_management.php?error=" . urlencode("Selected supervisor does not belong to the selected company"));
         exit;
     }
 
@@ -82,6 +99,10 @@ if ($action === 'edit') {
     }
     if (strtotime($end) <= strtotime($start)) {
         header("Location: Internship_management.php?error=" . urlencode("End date must be after start date"));
+        exit;
+    }
+    if (!isSupervisorFromCompany($conn, $supervisorId, $companyId)) {
+        header("Location: Internship_management.php?error=" . urlencode("Selected supervisor does not belong to the selected company"));
         exit;
     }
 
