@@ -166,10 +166,13 @@ $error   = $_GET['error'] ?? '';
         <label>Programme *</label>
         <select name="programme" id="fProgramme" required>
           <option value="">Select programme</option>
-          <option>CS</option>
-          <option>Maths</option>
+          <option>Computer Science</option>
+          <option>Mathematics and Data Science</option>
           <option>Engineering</option>
           <option>Finance</option>
+          <option>Business and Management</option>
+          <option>Biological Sciences</option>
+          <option>Psychology</option>
         </select>
       </div>
 
