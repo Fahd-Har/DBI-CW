@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $curQ->execute();
         $currentUserId = (int)($curQ->get_result()->fetch_assoc()['UserID'] ?? 0);
         if ($currentUserId === 0) {
-            eader("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("This company has no supervisor on record. Add one via 'Add New Supervisor' instead."));
+            header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("This company has no supervisor on record. Add one via 'Add New Supervisor' instead."));
             exit;
         }
 
