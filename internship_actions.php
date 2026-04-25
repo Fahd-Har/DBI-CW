@@ -6,15 +6,23 @@ requireRole('admin');
 
 function cleanupOrphanedCompany($conn, $companyId) {
     if (!$companyId) return;
-    $chk = $conn->prepare("SELECT COUNT(*) AS c FROM internship WHERE CompanyID = ?");
-    $chk->bind_param("i", $companyId);
-    $chk->execute();
-    $count = (int)$chk->get_result()->fetch_assoc()['c'];
-    if ($count === 0) {
-        $del = $conn->prepare("DELETE FROM company WHERE CompanyID = ?");
-        $del->bind_param("i", $companyId);
-        $del->execute();
-    }
+
+    // Still has internships → not orphaned
+    $chk1 = $conn->prepare("SELECT COUNT(*) AS c FROM internship WHERE CompanyID = ?");
+    $chk1->bind_param("i", $companyId);
+    $chk1->execute();
+    if ((int)$chk1->get_result()->fetch_assoc()['c'] > 0) return;
+
+    // Still has a supervisor → not orphaned
+    $chk2 = $conn->prepare("SELECT COUNT(*) AS c FROM supervisor WHERE CompanyID = ?");
+    $chk2->bind_param("i", $companyId);
+    $chk2->execute();
+    if ((int)$chk2->get_result()->fetch_assoc()['c'] > 0) return;
+
+    // Truly orphaned — safe to delete
+    $del = $conn->prepare("DELETE FROM company WHERE CompanyID = ?");
+    $del->bind_param("i", $companyId);
+    $del->execute();
 }
 
 function monthsBetween($startStr, $endStr) {

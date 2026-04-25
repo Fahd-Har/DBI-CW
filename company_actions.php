@@ -15,6 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username        = trim($_POST['username'] ?? '');
         $password        = $_POST['password'] ?? '';
 
+        // Pre-check: username must not already exist
+        $userChk = $conn->prepare("SELECT UserID FROM users WHERE Username = ?");
+        $userChk->bind_param("s", $username);
+        $userChk->execute();
+        if ($userChk->get_result()->num_rows > 0) {
+            header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("Username '$username' is already taken"));
+            exit;
+        }
+
         $conn->begin_transaction();
         try {
             // 1. Create User Account
@@ -23,22 +32,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmtUser->execute();
             $newUserId = $conn->insert_id;
 
-            // 2. Create Company Profile
+             //  Create Company Profile
             $stmtCo = $conn->prepare("INSERT INTO company (CompanyName, Location, Sector) VALUES (?, ?, ?)");
             $stmtCo->bind_param("sss", $company_name, $location, $sector);
             $stmtCo->execute();
+            $newCompanyId = $conn->insert_id;
 
-            // 3. Create Supervisor Profile linked to the User
-            $stmtSup = $conn->prepare("INSERT INTO supervisor (UserID, Name, Company) VALUES (?, ?, ?)");
-            $stmtSup->bind_param("iss", $newUserId, $supervisor_name, $company_name);
+            $stmtSup = $conn->prepare("INSERT INTO supervisor (UserID, Name, CompanyID) VALUES (?, ?, ?)");
+            $stmtSup->bind_param("isi", $newUserId, $supervisor_name, $newCompanyId);
             $stmtSup->execute();
 
             $conn->commit();
             header("Location: User_Management_IndustrySupervisor.php?success=New company and supervisor added.");
-        } catch (Exception $e) {
+            } catch (mysqli_sql_exception $e) {
             $conn->rollback();
             error_log($e->getMessage());
-            header("Location: User_Management_IndustrySupervisor.php?error=Error: " . urlencode($e->getMessage()));
+            if ($e->getCode() == 1062) {
+                $msg = (strpos($e->getMessage(), 'uk_company_name') !== false)
+                    ? "A company named '$company_name' already exists."
+                    : "Username '$username' is already taken.";
+            } else {
+                $msg = "An unexpected error occurred. Please try again.";
+            }
+            header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode($msg));
         }
         exit;
     } 
@@ -53,40 +69,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $username        = trim($_POST['username'] ?? '');
         $password        = $_POST['password'] ?? '';
 
+        // Pre-check: find this supervisor's existing UserID, then ensure the new
+        // username isn't already used by anyone.
+        $curQ = $conn->prepare("SELECT UserID FROM supervisor WHERE CompanyID = ?");
+        $curQ->bind_param("i", $company_id);
+        $curQ->execute();
+        $currentUserId = (int)($curQ->get_result()->fetch_assoc()['UserID'] ?? 0);
+        if ($currentUserId === 0) {
+            eader("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("This company has no supervisor on record. Add one via 'Add New Supervisor' instead."));
+            exit;
+        }
+
+        $userChk = $conn->prepare("SELECT UserID FROM users WHERE Username = ? AND UserID <> ?");
+        $userChk->bind_param("si", $username, $currentUserId);
+        $userChk->execute();
+        if ($userChk->get_result()->num_rows > 0) {
+            header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode("Username '$username' is already taken"));
+            exit;
+        }
+
         $conn->begin_transaction();
         try {
-            // 1. Get current company name before updating (needed to find the supervisor)
-            $oldQ = $conn->prepare("SELECT CompanyName FROM company WHERE CompanyID = ?");
-            $oldQ->bind_param("i", $company_id);
-            $oldQ->execute();
-            $oldName = $oldQ->get_result()->fetch_assoc()['CompanyName'] ?? '';
-
-            // 2. Update Company
+            
+            //  Update Company
             $stmtCo = $conn->prepare("UPDATE company SET CompanyName=?, Location=?, Sector=? WHERE CompanyID=?");
             $stmtCo->bind_param("sssi", $company_name, $location, $sector, $company_id);
             $stmtCo->execute();
 
-            // 3. Update Supervisor (linked by the old company name)
-            $stmtSup = $conn->prepare("UPDATE supervisor SET Name=?, Company=? WHERE Company=?");
-            $stmtSup->bind_param("sss", $supervisor_name, $company_name, $oldName);
+            $stmtSup = $conn->prepare("UPDATE supervisor SET Name=? WHERE CompanyID=?");
+            $stmtSup->bind_param("si", $supervisor_name, $company_id);
             $stmtSup->execute();
-            
-            // 4. Update User Password if provided, otherwise just Username
+
+            //  Update User account (look up via CompanyID)
             if (!empty($password)) {
-                $stmtU = $conn->prepare("UPDATE users u JOIN supervisor s ON u.UserID = s.UserID SET u.Username=?, u.Password=? WHERE s.Company=?");
-                $stmtU->bind_param("sss", $username, $password, $company_name);
+                $stmtU = $conn->prepare("UPDATE users u JOIN supervisor s ON u.UserID = s.UserID SET u.Username=?, u.Password=? WHERE s.CompanyID=?");
+                $stmtU->bind_param("ssi", $username, $password, $company_id);
             } else {
-                $stmtU = $conn->prepare("UPDATE users u JOIN supervisor s ON u.UserID = s.UserID SET u.Username=? WHERE s.Company=?");
-                $stmtU->bind_param("ss", $username, $company_name);
+                $stmtU = $conn->prepare("UPDATE users u JOIN supervisor s ON u.UserID = s.UserID SET u.Username=? WHERE s.CompanyID=?");
+                $stmtU->bind_param("si", $username, $company_id);
             }
             $stmtU->execute();
 
             $conn->commit();
             header("Location: User_Management_IndustrySupervisor.php?success=Record updated successfully.");
-        } catch (Exception $e) {
+                } catch (mysqli_sql_exception $e) {
             $conn->rollback();
             error_log($e->getMessage());
-            header("Location: User_Management_IndustrySupervisor.php?error=Update failed.");
+            if ($e->getCode() == 1062) {
+                $msg = (strpos($e->getMessage(), 'uk_company_name') !== false)
+                    ? "A company named '$company_name' already exists."
+                    : "Username '$username' is already taken.";
+            } else {
+                $msg = "An unexpected error occurred. Please try again.";
+            }
+            header("Location: User_Management_IndustrySupervisor.php?error=" . urlencode($msg));
         }
         exit;
     }
@@ -96,30 +132,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $conn->begin_transaction();
         try {
-            // 1. Find the UserID and CompanyName
-            $find = $conn->prepare("SELECT s.UserID, c.CompanyName FROM company c LEFT JOIN supervisor s ON s.Company = c.CompanyName WHERE c.CompanyID = ?");
+            $find = $conn->prepare("SELECT s.UserID FROM supervisor s WHERE s.CompanyID = ?");
             $find->bind_param("i", $company_id);
             $find->execute();
             $data = $find->get_result()->fetch_assoc();
-            
+
             if ($data) {
                 $uid = $data['UserID'];
-                
-                // 2. Delete Supervisor (Child)
+
+                // Delete Supervisor (Child)
                 $delSup = $conn->prepare("DELETE FROM supervisor WHERE UserID = ?");
                 $delSup->bind_param("i", $uid);
                 $delSup->execute();
 
-                // 3. Delete User (Parent of Supervisor)
+                // Delete User (Parent of Supervisor)
                 $delUser = $conn->prepare("DELETE FROM users WHERE UserID = ?");
                 $delUser->bind_param("i", $uid);
                 $delUser->execute();
-
-                // 4. Delete Company
-                $delCo = $conn->prepare("DELETE FROM company WHERE CompanyID = ?");
-                $delCo->bind_param("i", $company_id);
-                $delCo->execute();
             }
+
+            // Delete Company (always — runs whether or not a supervisor existed)
+            $delCo = $conn->prepare("DELETE FROM company WHERE CompanyID = ?");
+            $delCo->bind_param("i", $company_id);
+            $delCo->execute();
 
             $conn->commit();
             header("Location: User_Management_IndustrySupervisor.php?success=Supervisor and Company deleted.");
