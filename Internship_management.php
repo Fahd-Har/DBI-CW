@@ -313,8 +313,6 @@ function statusFromDates($start, $end) {
         opt.style.display = 'none'; 
       } 
     } 
-
-    supervisorSelect.value = '';
   }
 
   document.getElementById('fCompanySelect').addEventListener('change', filterSupervisors);
