@@ -42,7 +42,7 @@ CREATE TABLE `assessment` (
   `TimeManagement` int DEFAULT NULL,
   `TotalMarks` int DEFAULT NULL,
   `Comments` varchar(500) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `assessment`
@@ -63,7 +63,7 @@ CREATE TABLE `company` (
   `CompanyName` varchar(150) NOT NULL,
   `Location` varchar(150) DEFAULT NULL,
   `Sector` varchar(100) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `company`
@@ -84,7 +84,7 @@ CREATE TABLE `grade_classification` (
   `GradeID` int NOT NULL,
   `AssessmentID` int NOT NULL,
   `GradeClassification` varchar(50) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `grade_classification`
@@ -109,7 +109,7 @@ CREATE TABLE `internship` (
   `Duration` int DEFAULT NULL,
   `Start_Date` date NOT NULL,
   `End_Date` date NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `internship`
@@ -130,7 +130,7 @@ CREATE TABLE `lecturer` (
   `UserID` int NOT NULL,
   `Name` varchar(150) DEFAULT NULL,
   `Department` varchar(150) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `lecturer`
@@ -152,7 +152,7 @@ CREATE TABLE `student` (
   `Name` varchar(150) NOT NULL,
   `Programme` varchar(150) DEFAULT NULL,
   `UserID` int DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `student`
@@ -174,7 +174,7 @@ CREATE TABLE `supervisor` (
   `UserID` int NOT NULL,
   `Name` varchar(150) DEFAULT NULL,
   `CompanyID` int NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `supervisor`
@@ -196,7 +196,7 @@ CREATE TABLE `users` (
   `Username` varchar(50) NOT NULL,
   `Password` varchar(50) NOT NULL,
   `Role` varchar(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
