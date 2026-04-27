@@ -12,7 +12,7 @@ $companies = $conn->query("
     u.Username, 
     s.Name AS SupervisorName
   FROM company c
-  LEFT JOIN supervisor s ON s.Company = c.CompanyName
+  LEFT JOIN supervisor s ON s.CompanyID = c.CompanyID
   LEFT JOIN users u ON u.UserID = s.UserID
   ORDER BY c.CompanyID
 ");

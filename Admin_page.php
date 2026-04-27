@@ -10,7 +10,8 @@ function getCount($conn, $sql) {
 }
 
 $totalStudents    = getCount($conn, "SELECT COUNT(*) as c FROM student");
-$totalAssessors   = getCount($conn, "SELECT (SELECT COUNT(*) FROM lecturer) + (SELECT COUNT(*) FROM supervisor) as c");
+$totalLecturers   = getCount($conn, "SELECT COUNT(*) as c FROM lecturer");
+$totalCompanies   = getCount($conn, "SELECT COUNT(*) as c FROM company");
 $totalInternships = getCount($conn, "SELECT COUNT(*) as c FROM internship");
 
 // Pending = internships missing EITHER a lecturer or supervisor assessment
@@ -75,9 +76,14 @@ $totalPending = getCount($conn, "
       <div class="stat-note">Registered in system</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Assessors</div>
-      <div class="stat-value"><?= htmlspecialchars($totalAssessors) ?></div>
+      <div class="stat-label">Lecturers</div>
+      <div class="stat-value"><?= htmlspecialchars($totalLecturers) ?></div>
       <div class="stat-note">Active accounts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Companies</div>
+      <div class="stat-value"><?= htmlspecialchars($totalCompanies) ?></div>
+      <div class="stat-note">Registered in system</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Internships</div>

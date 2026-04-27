@@ -135,8 +135,9 @@ if ($action === 'delete') {
         // 1. delete grade_classification rows for assessments by this lecturer
         $g = $conn->prepare("
             DELETE gc FROM grade_classification gc
-            JOIN assessment a ON a.AssessmentID = gc.AssessmentID
-            WHERE a.LecturerID = ?
+           JOIN assessment a    ON a.AssessmentID = gc.AssessmentID
+            JOIN assessment mine ON mine.InternshipID = a.InternshipID
+                                AND mine.LecturerID  = ?
         ");
         $g->bind_param("i", $id);
         $g->execute();

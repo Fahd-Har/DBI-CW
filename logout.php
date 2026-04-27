@@ -1,7 +1,6 @@
 <?php
 session_start();
-$_SESSION = array(); // Clears all session variables
-session_destroy();   // Destroys the session completely
-header("Location: login_page.php");
+session_destroy();
+$err = $_GET['error'] ?? '';
+header("Location: login_page.php" . ($err ? "?error=" . urlencode($err) : ""));
 exit;
-?>
